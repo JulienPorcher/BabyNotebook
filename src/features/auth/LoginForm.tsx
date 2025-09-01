@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -43,8 +45,16 @@ export default function LoginForm() {
         required
       />
 
-      <button type="submit" className="w-full bg-primary text-white py-2 rounded-lg">
-        Connexion
+      <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+        Se connecter
+      </button>
+
+      <button
+        type="button"
+        onClick={() => navigate("/forgot-password")}
+        className="w-full text-blue-500 text-sm hover:underline"
+      >
+        Mot de passe oublié ?
       </button>
 
       {message && <p className="text-sm text-gray-600">{message}</p>}

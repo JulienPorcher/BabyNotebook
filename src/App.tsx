@@ -34,7 +34,7 @@ function App() {
             </Route>
           
         ) : (
-          <LoginPage />
+          <Route path="*" element={<LoginPage />} />
         )}
         </Routes>
       </BrowserRouter>
