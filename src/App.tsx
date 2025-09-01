@@ -8,8 +8,8 @@ import ActivitiesPage from "./features/pages/ActivitiesPage";
 import SettingsPage from "./features/settings/SettingsPage";
 import EvolutionPage from "./features/pages/subpages/EvolutionPage";
 import Layout from "./components/Layout";
-import ForgotPassword from "./features/pages/ForgotPassword";
-import ResetPassword from "./features/pages/ResetPassword";
+import ForgotPassword from "./features/auth/ForgotPassword";
+import ResetPassword from "./features/auth/ResetPassword";
 
 function App() {
   const { user, loading } = useAuth();
@@ -34,7 +34,7 @@ function App() {
             </Route>
           
         ) : (
-          <LoginPage />
+          <Route path="*" element={<LoginPage />} />
         )}
         </Routes>
       </BrowserRouter>
