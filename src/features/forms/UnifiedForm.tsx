@@ -58,7 +58,7 @@ const formConfigs: Record<FormPage, FormConfig> = {
       { name: 'description', type: 'textarea', label: 'Description' }
     ],
     submitButtonColor: 'bg-blue-500',
-    isModal: false
+    isModal: true
   },
   weight: {
     title: "Ajouter un poids",
@@ -68,7 +68,7 @@ const formConfigs: Record<FormPage, FormConfig> = {
       { name: 'comment', type: 'textarea', label: 'Commentaire' }
     ],
     submitButtonColor: 'bg-purple-500',
-    isModal: false
+    isModal: true
   },
   measure: {
     title: "Ajouter une mesure",
@@ -78,7 +78,7 @@ const formConfigs: Record<FormPage, FormConfig> = {
       { name: 'comment', type: 'textarea', label: 'Commentaire' }
     ],
     submitButtonColor: 'bg-green-500',
-    isModal: false
+    isModal: true
   }
 };
 
