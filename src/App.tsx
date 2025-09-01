@@ -8,6 +8,8 @@ import ActivitiesPage from "./features/pages/ActivitiesPage";
 import SettingsPage from "./features/settings/SettingsPage";
 import EvolutionPage from "./features/pages/subpages/EvolutionPage";
 import Layout from "./components/Layout";
+import ForgotPassword from "./features/pages/ForgotPassword";
+import ResetPassword from "./features/pages/ResetPassword";
 
 function App() {
   const { user, loading } = useAuth();
@@ -17,8 +19,12 @@ function App() {
   return (
     <BabyProvider>
       <BrowserRouter>
-        {user ? (
-          <Routes>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          {user ? (
+          
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/overview" element={<OverviewPage />} />
@@ -26,10 +32,11 @@ function App() {
               <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
-          </Routes>
+          
         ) : (
           <LoginPage />
         )}
+        </Routes>
       </BrowserRouter>
     </BabyProvider>
   );
