@@ -1,8 +1,30 @@
 import { useState } from "react";
 import { PlusCircle, Edit3 } from "lucide-react";
+import UnifiedForm from "../forms/UnifiedForm";
+import { useBaby } from "../../context/BabyContext";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function ActivitiesPage() {
   const [showForm, setShowForm] = useState(false);
+  const { currentBabyId } = useBaby();
+
+  const handleFormSubmit = async (formData: Record<string, any>) => {
+    if (!currentBabyId) return;
+
+    try {
+      const { error } = await supabase
+        .from("activities")
+        .insert([{ ...formData, baby_id: currentBabyId }]);
+
+      if (error) {
+        console.error("Error adding activity:", error);
+      } else {
+        console.log("Activity added successfully");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   return (
     <div className="p-4 space-y-6">
@@ -41,6 +63,15 @@ export default function ActivitiesPage() {
           description="Découverte des couleurs avec les doigts."
         />
       </div>
+
+      {/* Form Modal */}
+      {showForm && (
+        <UnifiedForm
+          page="activity"
+          onSubmit={handleFormSubmit}
+          onClose={() => setShowForm(false)}
+        />
+      )}
     </div>
   );
 }
