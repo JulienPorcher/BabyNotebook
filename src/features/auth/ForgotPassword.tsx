@@ -1,5 +1,6 @@
 // src/pages/ForgotPassword.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -9,7 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    if (message?.startsWith("📩")) {
+      const timer = setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+
+      return () => clearTimeout(timer); // nettoyage si l’utilisateur quitte avant la fin
+    }
+  }, [message, navigate]);
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

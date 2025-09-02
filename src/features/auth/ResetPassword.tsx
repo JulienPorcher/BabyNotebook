@@ -1,6 +1,6 @@
 // src/pages/ResetPassword.tsx
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams,useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
@@ -11,6 +11,7 @@ export default function ResetPassword() {
   const [params] = useSearchParams();
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Vérifie si Supabase a bien reçu un access token
@@ -30,6 +31,7 @@ export default function ResetPassword() {
       setMessage("Erreur : " + error.message);
     } else {
       setMessage("🎉 Ton mot de passe a été mis à jour !");
+      setTimeout(() => navigate("/login"), 3000);
     }
   };
 

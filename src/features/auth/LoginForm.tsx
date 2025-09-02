@@ -20,6 +20,8 @@ export default function LoginForm() {
       setMessage(`❌ Erreur: ${error.message}`);
     } else {
       setMessage("✅ Connexion réussie !");
+      // Redirect to main page after successful login
+      navigate("/");
     }
   }
 
