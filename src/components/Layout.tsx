@@ -6,7 +6,7 @@ const tabs = [
   { path: "/", icon: <Home size={24} /> },
   { path: "/overview", icon: <Utensils size={24} /> },
   { path: "/evolution", icon: <Baby size={24} /> },
-  { path: "/activity", icon: <Activity size={24} /> },
+  { path: "/activities", icon: <Activity size={24} /> },
   { path: "/settings", icon: <Settings size={24} /> },
 ];
 
