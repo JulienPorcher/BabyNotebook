@@ -4,8 +4,6 @@ import BabyLogPage from "./BabyLogPage";
 export default function OverviewPage() {
   const [activeTab, setActiveTab] = useState<"meals" | "diapers" | "baths">("meals");
 
-  // TODO: mettre un vrai sélecteur de bébé
-  const [selectedBaby, setSelectedBaby] = useState("baby_id_placeholder");
 
   return (
     <div className="p-4">
