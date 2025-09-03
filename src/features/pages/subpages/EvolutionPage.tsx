@@ -9,36 +9,6 @@ export default function EvolutionPage() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Sélecteur bébé */}
-      <div>
-        <label className="text-sm text-gray-600">Sélectionner un bébé :</label>
-        <select className="w-full border rounded-xl p-2 mt-1">
-          <option>Bébé 1</option>
-          <option>Bébé 2</option>
-        </select>
-      </div>
-
-      {/* Section Bain */}
-      <section className="bg-white rounded-2xl shadow p-4 space-y-3">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Bain</h2>
-          <button
-            onClick={() => setShowBathForm(true)}
-            className="flex items-center gap-2 bg-blue-500 text-white px-3 py-2 rounded-xl"
-          >
-            <PlusCircle size={18} /> Ajouter
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <StatCard label="Fréquence" value="Tous les 2 jours" />
-          <StatCard label="Nb sur 7j" value="4" />
-        </div>
-
-        <button className="flex items-center gap-2 text-blue-600 mt-2">
-          <Edit3 size={16} /> Modifier
-        </button>
-      </section>
 
       {/* Section Mesures */}
       <section className="bg-white rounded-2xl shadow p-4 space-y-3">

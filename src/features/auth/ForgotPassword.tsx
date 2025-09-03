@@ -24,7 +24,7 @@ export default function ForgotPassword() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://amazing-semolina-7b2917.netlify.app/reset-password", 
+      redirectTo: `${window.location.origin}/reset-password`, 
     });
 
     if (error) {

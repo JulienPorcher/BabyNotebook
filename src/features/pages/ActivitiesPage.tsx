@@ -28,14 +28,6 @@ export default function ActivitiesPage() {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Sélecteur bébé */}
-      <div>
-        <label className="text-sm text-gray-600">Sélectionner un bébé :</label>
-        <select className="w-full border rounded-xl p-2 mt-1">
-          <option>Bébé 1</option>
-          <option>Bébé 2</option>
-        </select>
-      </div>
 
       {/* Boutons Ajouter/Modifier */}
       <div className="flex gap-2">
