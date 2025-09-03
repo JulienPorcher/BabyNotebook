@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusCircle, Edit3 } from "lucide-react";
+import { Edit3 } from "lucide-react";
 import UnifiedForm from "../../forms/UnifiedForm";
 
 export default function EvolutionPage() {
@@ -101,11 +101,3 @@ export default function EvolutionPage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-gray-100 rounded-xl p-2">
-      <div className="text-sm text-gray-500">{label}</div>
-      <div className="text-lg font-bold">{value}</div>
-    </div>
-  );
-}
