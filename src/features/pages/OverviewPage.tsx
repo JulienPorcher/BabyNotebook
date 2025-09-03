@@ -9,19 +9,7 @@ export default function OverviewPage() {
 
   return (
     <div className="p-4">
-      {/* Sélecteur de bébé */}
-      <div className="mb-4">
-        <label className="font-semibold mr-2">Bébé :</label>
-        <select
-          value={selectedBaby}
-          onChange={(e) => setSelectedBaby(e.target.value)}
-          className="border px-2 py-1 rounded"
-        >
-          <option value="baby_id_placeholder">Bébé 1</option>
-          <option value="baby2">Bébé 2</option>
-        </select>
-      </div>
-
+      
       {/* Intercalaires */}
       <div className="flex space-x-2 mb-4 border-b">
         <button
@@ -46,7 +34,7 @@ export default function OverviewPage() {
           }`}
           onClick={() => setActiveTab("baths")}
         >
-          Couches
+          Bains
         </button>
       </div>
 

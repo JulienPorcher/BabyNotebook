@@ -9,7 +9,7 @@ import SettingsPage from "./features/settings/SettingsPage";
 import EvolutionPage from "./features/pages/subpages/EvolutionPage";
 import Layout from "./components/Layout";
 import ForgotPassword from "./features/auth/ForgotPassword";
-import ResetPassword from "./features/auth/ResetPassword";
+import UpdatePassword from "./features/auth/UpdatePassword";
 
 function App() {
   const { user, loading } = useAuth();
@@ -22,7 +22,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password" element={<UpdatePassword />} />
           {user ? (
           
             <Route element={<Layout />}>
