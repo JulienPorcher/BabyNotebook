@@ -4,17 +4,17 @@ import { supabase } from "../../../lib/supabaseClient";
 import UnifiedForm from "../../forms/UnifiedForm";
 import StatCard from "../../../components/StatCard"
 
-type MealsPageProps = {
+type BottlePageProps = {
   babyId: string;
 };
 
-export default function MealsPage({ babyId }: MealsPageProps) {
+export default function BottlePage({ babyId }: BottlePageProps) {
   const [data, setData] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
 
-  async function fetchMeals() {
+  async function fetchBottles() {
     const { data, error } = await supabase
-      .from("meals")
+      .from("bottle")
       .select("*")
       .eq("baby_id", babyId)
       .order("date", { ascending: false })
@@ -23,13 +23,13 @@ export default function MealsPage({ babyId }: MealsPageProps) {
     if (!error) setData(data);
   }
 
-  async function addMeal(values: any) {
-    const { error } = await supabase.from("meals").insert([{ ...values, baby_id: babyId }]);
-    if (!error) fetchMeals();
+  async function addBottle(values: any) {
+    const { error } = await supabase.from("bottle").insert([{ ...values, baby_id: babyId }]);
+    if (!error) fetchBottles();
   }
 
   useEffect(() => {
-    if (babyId) fetchMeals();
+    if (babyId) fetchBottles();
   }, [babyId]);
 
   return (
@@ -109,14 +109,14 @@ export default function MealsPage({ babyId }: MealsPageProps) {
       </button>
 
       {showForm && <UnifiedForm 
-          page="meal"
-          onSubmit={addMeal} 
+          page="bottle"
+          onSubmit={addBottle} 
           onClose={() => setShowForm(false)}  />}
 
       <ul>
-        {data.map((meal) => (
-          <li key={meal.id}>
-            {meal.date} - {meal.type} ({meal.quantity}) {meal.comment}
+        {data.map((bottle) => (
+          <li key={bottle.id}>
+            {bottle.date} - {bottle.type} ({bottle.quantity}) {bottle.comment}
           </li>
         ))}
       </ul>

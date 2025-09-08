@@ -10,6 +10,7 @@ import EvolutionPage from "./features/pages/subpages/EvolutionPage";
 import Layout from "./components/Layout";
 import ForgotPassword from "./features/auth/ForgotPassword";
 import UpdatePassword from "./features/auth/UpdatePassword";
+import backgroundImage from "./assets/background_login_day.svg";
 
 function App() {
   const { user, loading } = useAuth();
@@ -18,6 +19,16 @@ function App() {
 
   return (
     <BabyProvider>
+      <div
+        style={{
+          minHeight: "100vh",
+          width: "100%",
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -38,6 +49,7 @@ function App() {
         )}
         </Routes>
       </BrowserRouter>
+      </div>
     </BabyProvider>
   );
 }

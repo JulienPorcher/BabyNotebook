@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Utensils, Baby, Activity, Bath, Ruler, Scale } from "lucide-react";
+import { Utensils, Baby, Activity, Bath, Ruler, Scale, Heart, HeartPlus, Milk } from "lucide-react";
 import type { JSX } from "react";
 import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
 import { useBaby } from "../../context/BabyContext";
@@ -15,6 +15,8 @@ export default function HomePage() {
   const getTableName = (page: FormPage): string => {
     const tableMap: Record<FormPage, string> = {
       meal: 'meals',
+      bottle: 'meals',
+      pump: 'meals',
       diaper: 'diapers',
       activity: 'activities',
       bath: 'baths',
@@ -69,7 +71,10 @@ export default function HomePage() {
       <div className="bg-white rounded-2xl shadow p-4">
         <h2 className="text-lg font-semibold mb-3">Ajouter</h2>
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-          <ActionButton icon={<Utensils />} label="Repas" onClick={() => handleActionButtonClick("meal")} />
+          <ActionButton icon={<Milk />} label="Biberon" onClick={() => handleActionButtonClick("bottle")} />
+          <ActionButton icon={<Utensils />} label="Solide" onClick={() => handleActionButtonClick("bottle")} />
+          <ActionButton icon={<Heart />} label="Allaitement" onClick={() => handleActionButtonClick("pump")} />
+          <ActionButton icon={<HeartPlus />} label="Expression" onClick={() => handleActionButtonClick("pump")} />
           <ActionButton icon={<Baby />} label="Couche" onClick={() => handleActionButtonClick("diaper")} />
           <ActionButton icon={<Activity />} label="Activité" onClick={() => handleActionButtonClick("activity")} />
           <ActionButton icon={<Bath />} label="Bain" onClick={() => handleActionButtonClick("bath")} />

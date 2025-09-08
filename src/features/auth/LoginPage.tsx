@@ -3,6 +3,8 @@ import SignupForm from "./authService";
 import LoginForm from "./LoginForm";
 import { supabase } from "../../lib/supabaseClient";
 import { FcGoogle } from "react-icons/fc";
+import backgroundImage from "../../assets/background_login_day.svg";
+import "../../components/ui/Login.css"
 
 export default function LoginPage() {
 
@@ -17,16 +19,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-6 bg-white p-6 rounded-2xl shadow-lg">
+    <div
+      className="login-page-container"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+
+      {/* Formulaire */}
+      <div className="w-full max-w-md space-y-6 bg-white p-6 rounded-2xl shadow-lg z-10 relative">
         <h1 className="text-2xl font-bold text-center">
           {isSignup ? "Créer un compte" : "Connexion"}
         </h1>
 
-        {/* Formulaire Login ou Signup */}
         {isSignup ? <SignupForm /> : <LoginForm />}
 
-        {/* Bouton Google */}
         <button
           onClick={handleGoogleSignIn}
           className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition"
@@ -35,7 +44,6 @@ export default function LoginPage() {
           <span className="font-medium">Continuer avec Google</span>
         </button>
 
-        {/* Toggle Login / Signup */}
         <div className="text-center">
           {isSignup ? (
             <p className="text-sm">
