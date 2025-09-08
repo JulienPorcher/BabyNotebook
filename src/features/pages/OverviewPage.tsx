@@ -11,7 +11,7 @@ export default function OverviewPage() {
       {/* Intercalaires */}
       <div className="flex space-x-2 mb-4 border-b">
         <button
-          className={`px-4 py-2 rounded-t-lg ${
+          className={`flex-1 px-4 py-2 rounded-t-lg ${
             activeTab === "meals" ? "bg-green-500 text-white" : "bg-gray-200"
           }`}
           onClick={() => setActiveTab("meals")}
@@ -19,7 +19,7 @@ export default function OverviewPage() {
           Repas
         </button>
         <button
-          className={`px-4 py-2 rounded-t-lg ${
+          className={`flex-1 px-4 py-2 rounded-t-lg ${
             activeTab === "diapers" ? "bg-yellow-500 text-white" : "bg-gray-200"
           }`}
           onClick={() => setActiveTab("diapers")}
@@ -27,7 +27,7 @@ export default function OverviewPage() {
           Couches
         </button>
         <button
-          className={`px-4 py-2 rounded-t-lg ${
+          className={`flex-1 px-4 py-2 rounded-t-lg ${
             activeTab === "baths" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
           onClick={() => setActiveTab("baths")}

@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
+import type { JSX } from "react";
+import { Utensils, Heart, HeartPlus, Milk } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useBaby } from "../../context/BabyContext";
 import UnifiedForm from "../forms/UnifiedForm";
 
 const logTypeConfig = {
   meal: {
-    title: "Repas",
+    title: "Biberon",
     table: "meals",
+    quantityType: null! as number,
+  },
+  bottle: {
+    title: "Biberon",
+    table: "bottles",
+    quantityType: null! as number,
+  },
+  pump: {
+    title: "Allaitement / Expression",
+    table: "pumps",
     quantityType: null! as number,
   },
   diaper: {
@@ -32,7 +44,7 @@ type LogEntry<T extends LogType> = {
 };
 
 type BabyLogPageProps = {
-  page: LogType; // "meal" | "diaper" | "bath"
+  page: 'meal' | 'diaper' | 'bath';
 };
 
 
@@ -42,12 +54,14 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   const [logs, setLogs] = useState<LogEntry<typeof page>[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [initialFormValues, setInitialFormValues] = useState<Record<string, any> | undefined>(undefined);
+  const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | null>(null);
 
-  // Nom humain
-  const title = logTypeConfig[page].title;
+  // Page effective (si un sous-formulaire repas est sélectionné)
+  const effectivePage: LogType = (selectedFormPage ?? page) as LogType;
 
   // Table cible
-  const table = logTypeConfig[page].table;
+  const table = logTypeConfig[effectivePage].table;
 
   useEffect(() => {
     async function fetchLogs() {
@@ -101,13 +115,39 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
     <div>
       {/* Titre + bouton ajouter */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">{title}</h2>
-        <button 
-          onClick={() => setShowForm(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Ajouter
-        </button>
+        {page === "meal" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
+            <SquareButton
+              icon={<Milk />}
+              label="Biberon"
+              onClick={() => { setSelectedFormPage("bottle"); setInitialFormValues({ type: "Biberon" }); setShowForm(true); }}
+            />
+            <SquareButton
+              icon={<Utensils />}
+              label="Solide"
+              onClick={() => { setSelectedFormPage("bottle"); setInitialFormValues({ type: "Solide" }); setShowForm(true); }}
+            />
+            <SquareButton
+              icon={<Heart />}
+              label="Allaitement"
+              onClick={() => { setSelectedFormPage("pump"); setInitialFormValues({ type: "Allaitement" }); setShowForm(true); }}
+            />
+            <SquareButton
+              icon={<HeartPlus />}
+              label="Expression"
+              onClick={() => { setSelectedFormPage("pump"); setInitialFormValues({ type: "Expression" }); setShowForm(true); }}
+            />
+          </div>
+        ) : (
+          <div className="w-full">
+            <button
+              onClick={() => setShowForm(true)}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Ajouter
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats (placeholder ici, mais calculées en DB) */}
@@ -158,11 +198,24 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
       {/* Form Modal */}
       {showForm && (
         <UnifiedForm
-          page={page}
+          page={effectivePage}
+          initialValues={initialFormValues}
           onSubmit={handleFormSubmit}
-          onClose={() => setShowForm(false)}
+          onClose={() => { setShowForm(false); setInitialFormValues(undefined); setSelectedFormPage(null); }}
         />
       )}
     </div>
+  );
+}
+
+function SquareButton({ icon, label, onClick }: { icon: JSX.Element; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center w-full bg-gray-100 rounded-xl p-4 hover:bg-gray-200"
+    >
+      {icon}
+      <span className="text-xs mt-1">{label}</span>
+    </button>
   );
 }

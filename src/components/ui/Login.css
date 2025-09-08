@@ -1,0 +1,29 @@
+.login-page-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f9fafb; /* couleur de fallback */
+    overflow: hidden;
+  }
+  
+  .background-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.2; /* rend le SVG discret derrière le formulaire */
+  
+    /* Exemple d’animation flottante */
+    animation: float 20s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(20px) rotate(5deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+  }
+  

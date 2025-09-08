@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export type FormPage = 'bath' | 'meal' | 'diaper' | 'activity' | 'weight' | 'measure';
+export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal';
 
 interface FormField {
   name: string;
@@ -19,6 +19,17 @@ interface FormConfig {
 }
 
 const formConfigs: Record<FormPage, FormConfig> = {
+  meal: {
+    title: "Ajouter un repas",
+    fields: [
+      { name: 'dateTime', type: 'datetime-local', required: true },
+      { name: 'type', type: 'text', placeholder: 'Type (biberon, solide...)', required: true },
+      { name: 'quantity', type: 'number', placeholder: 'Quantité' },
+      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
+    ],
+    submitButtonColor: 'bg-blue-500',
+    isModal: true
+  },
   bath: {
     title: "Ajouter un bain",
     fields: [
@@ -28,8 +39,18 @@ const formConfigs: Record<FormPage, FormConfig> = {
     submitButtonColor: 'bg-green-500',
     isModal: true
   },
-  meal: {
-    title: "Ajouter un repas",
+  bottle: {
+    title: "Ajouter un biberon",
+    fields: [
+      { name: 'dateTime', type: 'datetime-local', required: true },
+      { name: 'type', type: 'text', placeholder: 'Type (biberon, purée...)', required: true },
+      { name: 'quantity', type: 'number', placeholder: 'Quantité' },
+      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
+    ],
+    submitButtonColor: 'bg-blue-500',
+    isModal: true
+  },pump: {
+    title: "Ajouter une expression",
     fields: [
       { name: 'dateTime', type: 'datetime-local', required: true },
       { name: 'type', type: 'text', placeholder: 'Type (biberon, purée...)', required: true },
@@ -86,11 +107,12 @@ interface UnifiedFormProps {
   page: FormPage;
   onSubmit: (data: Record<string, any>) => void | Promise<void>;
   onClose?: () => void;
+  initialValues?: Record<string, any>;
 }
 
-export default function UnifiedForm({ page, onSubmit, onClose }: UnifiedFormProps) {
+export default function UnifiedForm({ page, onSubmit, onClose, initialValues }: UnifiedFormProps) {
   const config = formConfigs[page];
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, any>>(initialValues || {});
 
   const handleInputChange = (fieldName: string, value: any) => {
     setFormData(prev => ({
