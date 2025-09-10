@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import { Utensils, Heart, HeartPlus, Milk } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useBaby } from "../../context/BabyContext";
+import { useAuth } from "../../hooks/useAuth";
 import UnifiedForm from "../forms/UnifiedForm";
 
 const logTypeConfig = {
@@ -17,8 +18,13 @@ const logTypeConfig = {
     quantityType: null! as number,
   },
   pump: {
-    title: "Allaitement / Expression",
+    title: "Expression",
     table: "pumps",
+    quantityType: null! as number,
+  },
+  breast: {
+    title: "Allaitement",
+    table: "breastFeeding",
     quantityType: null! as number,
   },
   diaper: {
@@ -51,11 +57,12 @@ type BabyLogPageProps = {
 
 export default function BabyLogPage({ page }: BabyLogPageProps) {
   const { currentBabyId } = useBaby();
+  const { user } = useAuth();
   const [logs, setLogs] = useState<LogEntry<typeof page>[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [initialFormValues, setInitialFormValues] = useState<Record<string, any> | undefined>(undefined);
-  const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | null>(null);
+  const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | "breast" | null>(null);
 
   // Page effective (si un sous-formulaire repas est sélectionné)
   const effectivePage: LogType = (selectedFormPage ?? page) as LogType;
@@ -65,11 +72,14 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
 
   useEffect(() => {
     async function fetchLogs() {
+      if (!user?.id) return;
+      
       setLoading(true);
       const { data, error } = await supabase
         .from(table)
         .select("*")
         .eq("baby_id", currentBabyId)
+        .eq("user_id", user.id)
         .order("date", { ascending: false })
         .limit(10);
 
@@ -81,15 +91,15 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
       setLoading(false);
     }
     fetchLogs();
-  }, [currentBabyId, page]);
+  }, [currentBabyId, page, user?.id]);
 
   async function handleFormSubmit(formData: Record<string, any>) {
-    if (!currentBabyId) return;
+    if (!currentBabyId || !user?.id) return;
 
     try {
       const { error } = await supabase
         .from(table)
-        .insert([{ ...formData, baby_id: currentBabyId }]);
+        .insert([{ ...formData, baby_id: currentBabyId, user_id: user.id }]);
 
       if (error) {
         console.error("Error adding log:", error);
@@ -99,6 +109,7 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
           .from(table)
           .select("*")
           .eq("baby_id", currentBabyId)
+          .eq("user_id", user.id)
           .order("date", { ascending: false })
           .limit(10);
 
@@ -120,22 +131,22 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
             <SquareButton
               icon={<Milk />}
               label="Biberon"
-              onClick={() => { setSelectedFormPage("bottle"); setInitialFormValues({ type: "Biberon" }); setShowForm(true); }}
+              onClick={() => { setSelectedFormPage("bottle"); setShowForm(true); }}
             />
             <SquareButton
               icon={<Utensils />}
               label="Solide"
-              onClick={() => { setSelectedFormPage("bottle"); setInitialFormValues({ type: "Solide" }); setShowForm(true); }}
+              onClick={() => { setSelectedFormPage("bottle"); setShowForm(true); }}
             />
             <SquareButton
               icon={<Heart />}
               label="Allaitement"
-              onClick={() => { setSelectedFormPage("pump"); setInitialFormValues({ type: "Allaitement" }); setShowForm(true); }}
+              onClick={() => { setSelectedFormPage("breast"); setShowForm(true); }}
             />
             <SquareButton
               icon={<HeartPlus />}
               label="Expression"
-              onClick={() => { setSelectedFormPage("pump"); setInitialFormValues({ type: "Expression" }); setShowForm(true); }}
+              onClick={() => { setSelectedFormPage("pump"); setShowForm(true); }}
             />
           </div>
         ) : (
@@ -202,6 +213,7 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
           initialValues={initialFormValues}
           onSubmit={handleFormSubmit}
           onClose={() => { setShowForm(false); setInitialFormValues(undefined); setSelectedFormPage(null); }}
+          babyId={currentBabyId || undefined}
         />
       )}
     </div>
