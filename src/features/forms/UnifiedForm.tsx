@@ -1,20 +1,17 @@
 import { useState } from "react";
-import BreastForm from "./BreastForm";
+import { breastFormConfig } from "./BreastForm";
+import { mealFormConfig } from "./MealForm";
+import { bathFormConfig } from "./BathForm";
+import { bottleFormConfig } from "./BottleForm";
+import { pumpFormConfig } from "./PumpForm";
+import { diaperFormConfig } from "./DiaperForm";
+import { activityFormConfig } from "./ActivityForm";
+import { weightFormConfig } from "./WeightForm";
+import { measureFormConfig } from "./MeasureForm";
+import { babyFormConfig } from "./BabyForm";
+import { MealFormComponent, BottleFormComponent, DiaperFormComponent, BreastFormComponent } from "./components";
 
 export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal' | 'breast' | 'baby';
-// Helper function to round time to nearest 5 minutes
-const getRoundedDateTime = () => {
-  const now = new Date();
-  const minutes = now.getMinutes();
-  const roundedMinutes = Math.round(minutes / 5) * 5;
-  now.setMinutes(roundedMinutes, 0, 0);
-  return now.toISOString().slice(0, 16); // Format for datetime-local input
-};
-
-// Helper function to get current date
-const getCurrentDate = () => {
-  return new Date().toISOString().slice(0, 10); // Format for date input
-};
 
 interface FormField {
   name: string;
@@ -35,129 +32,16 @@ interface FormConfig {
 }
 
 const formConfigs: Record<FormPage, FormConfig> = {
-  meal: {
-    title: "Ajouter un repas",
-    fields: [
-      { name: 'date_time', type: 'datetime-local', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'nom', type: 'text', placeholder: 'Nom du repas'},
-      { name: 'fruits', type: 'number', placeholder: 'Fruits (g)'},
-      { name: 'cereals', type: 'number', placeholder: 'Céréales (g)'},
-      { name: 'vegetables', type: 'number', placeholder: 'Légumes (g)'},
-      { name: 'meat_proteins', type: 'number', placeholder: 'Viande & Protéines (g)'},
-      { name: 'dairy_products', type: 'number', placeholder: 'Produits laitiers (g)'},
-      { name: 'other', type: 'number', placeholder: 'Autres aliments(g)'},
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },
-  bath: {
-    title: "Ajouter un bain",
-    fields: [
-      { name: 'date', type: 'date', required: true, defaultValue: getCurrentDate() },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-green-500',
-    isModal: true
-  },
-  bottle: {
-    title: "Ajouter un biberon",
-    fields: [
-      { name: 'date_time', type: 'datetime-local', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'type', type: 'select', placeholder: 'Type de lait', required: true,
-        options: [
-          { label: 'Lait Maternel', value: 'Lait Maternel' },
-          { label: 'Lait Infantile', value: 'Lait Infantile' }
-      ] },
-      { name: 'quantity', type: 'number', placeholder: 'Quantité', required: true  },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },pump: {
-    title: "Ajouter une expression",
-    fields: [
-      { name: 'date_time', type: 'datetime-local', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'left_quantity', type: 'number', placeholder: 'Quantité Sein Gauche', required: true  },
-      { name: 'right_quantity', type: 'number', placeholder: 'Quantité Sein Droit', required: true  },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },
-  diaper: {
-    title: "Ajouter une couche",
-    fields: [
-      { name: 'date_time', type: 'datetime-local', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'type', type: 'select', placeholder: 'Urine, Selle ou Mixte', required: true, defaultValue: 'Urine',
-        options: [
-          { label: 'Urine', value: 'Urine' },
-          { label: 'Selle', value: 'Selle' },
-          { label: 'Mixte', value: 'Mixte' }
-      ]  },
-      { name: 'quantity', type: 'select', placeholder: 'Quantité', required: true,
-        options: [
-          { label: 'Petite', value: 'Petite' },
-          { label: 'Moyenne', value: 'Moyenne' },
-          { label: 'Grande', value: 'Grande' }
-      ]  },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-green-500',
-    isModal: true
-  },
-  activity: {
-    title: "Ajouter une activité",
-    fields: [
-      { name: 'date', type: 'date', label: 'Date', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'title', type: 'text', label: 'Titre', required: true  },
-      { name: 'description', type: 'textarea', label: 'Description' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },
-  weight: {
-    title: "Ajouter un poids",
-    fields: [
-      { name: 'date', type: 'date', label: 'Date', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'weight', type: 'number', label: 'Poids (kg)', step: '0.01', required: true  },
-      { name: 'comment', type: 'textarea', label: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-purple-500',
-    isModal: true
-  },
-  measure: {
-    title: "Ajouter une mesure",
-    fields: [
-      { name: 'date', type: 'date', label: 'Date', required: true, defaultValue: getRoundedDateTime() },
-      { name: 'height', type: 'number', label: 'Taille (cm)', required: true  },
-      { name: 'comment', type: 'textarea', label: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-green-500',
-    isModal: true
-  },
-  breast: {
-    title: "Allaitement",
-    fields: [
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-pink-500',
-    isModal: true
-  },
-  baby: {
-    title: "Créer un carnet de bébé",
-    fields: [
-      { name: 'name', type: 'text', placeholder: 'Nom du bébé', required: true },
-      { name: 'birth_date', type: 'date', label: 'Date de naissance', required: true },
-      { name: 'gender', type: 'select', placeholder: 'Genre (M/F)', required: true,
-        options: [
-          { label: 'Masculin', value: 'M' },
-          { label: 'Féminin', value: 'F' }
-      ] }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  }
+  meal: mealFormConfig,
+  bath: bathFormConfig,
+  bottle: bottleFormConfig,
+  pump: pumpFormConfig,
+  diaper: diaperFormConfig,
+  activity: activityFormConfig,
+  weight: weightFormConfig,
+  measure: measureFormConfig,
+  breast: breastFormConfig,
+  baby: babyFormConfig
 };
 
 interface UnifiedFormProps {
@@ -168,16 +52,37 @@ interface UnifiedFormProps {
   babyId?: string;
 }
 
+// Factory function to get the appropriate form component
+export function getFormComponent(page: FormPage) {
+  switch (page) {
+    case 'meal':
+      return MealFormComponent;
+    case 'bottle':
+      return BottleFormComponent;
+    case 'diaper':
+      return DiaperFormComponent;
+    case 'breast':
+      return BreastFormComponent;
+    default:
+      return null; // Use basic UnifiedForm for other types
+  }
+}
+
 export default function UnifiedForm({ page, onSubmit, onClose, initialValues, babyId }: UnifiedFormProps) {
-  // Handle special breast form
-  if (page === 'breast') {
+  // Check if there's a specialized component for this page
+  const SpecializedComponent = getFormComponent(page);
+  
+  if (SpecializedComponent) {
     return (
-      <BreastForm
+      <SpecializedComponent
         onSubmit={(data) => onSubmit(data)}
         onClose={onClose || (() => {})}
+        initialValues={initialValues}
+        babyId={babyId}
       />
     );
   }
+
 
   const config = formConfigs[page];
   const [formData, setFormData] = useState<Record<string, any>>(initialValues || {});

@@ -3,7 +3,6 @@ import SignupForm from "./authService";
 import LoginForm from "./LoginForm";
 import { supabase } from "../../lib/supabaseClient";
 import { FcGoogle } from "react-icons/fc";
-import backgroundImage from "../../assets/background_login_day.svg";
 import "../../components/ui/Login.css"
 
 export default function LoginPage() {
@@ -22,7 +21,7 @@ export default function LoginPage() {
     <div
       className="login-page-container"
       style={{
-        backgroundImage: `url(${backgroundImage})`,
+        backgroundColor: "#F8F9FA",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

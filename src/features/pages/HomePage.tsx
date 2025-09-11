@@ -5,10 +5,11 @@ import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
 import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
+import BabySelector from "../components/BabySelector";
 
 
 export default function HomePage() {
-  const { currentBabyId } = useBaby();
+  const { currentBabyId, babies, loading, setCurrentBabyId, refreshBabies } = useBaby();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [currentFormPage, setCurrentFormPage] = useState<FormPage | null>(null);
@@ -49,9 +50,10 @@ export default function HomePage() {
         console.error("Error adding entry:", error);
       } else {
         console.log("Entry added successfully");
-        // If it's a baby creation, you might want to refresh the baby list or redirect
+        // If it's a baby creation, refresh the baby list
         if (currentFormPage === 'baby') {
           console.log("Baby created successfully!");
+          await refreshBabies();
         }
       }
     } catch (error) {
@@ -69,8 +71,28 @@ export default function HomePage() {
     setCurrentFormPage(null);
   };
 
+  const handleSelectBaby = (babyId: string) => {
+    setCurrentBabyId(babyId);
+  };
+
+  // Debug logging
+  console.log('HomePage - babies:', babies);
+  console.log('HomePage - loading:', loading);
+  console.log('HomePage - user:', user);
+
   return (
     <div className="p-4 space-y-4">
+      {/* Debug Test */}
+      {/*<SupabaseTest />*/}
+      
+      {/* Baby Selector */}
+      <BabySelector
+        babies={babies}
+        currentBabyId={currentBabyId}
+        onSelectBaby={handleSelectBaby}
+        loading={loading}
+      />
+
       {/* Bloc 1 : Infos récentes */}
       <div className="bg-white rounded-2xl shadow p-4">
         <h2 className="text-lg font-semibold mb-3">Dernières infos</h2>
@@ -106,7 +128,7 @@ export default function HomePage() {
       </div>
       {/* Bloc 4 : Gestion des bébés */}
       <div className="bg-white rounded-2xl shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Gestion des bébés</h2>
+          <h2 className="text-lg font-semibold mb-3">Gestion des Carnets</h2>
           <div className="flex gap-2">
             <button 
               onClick={() => handleActionButtonClick("baby")}

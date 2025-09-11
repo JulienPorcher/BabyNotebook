@@ -62,7 +62,7 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [initialFormValues, setInitialFormValues] = useState<Record<string, any> | undefined>(undefined);
-  const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | "breast" | null>(null);
+  const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | "breast" | "meal" | null>(null);
 
   // Page effective (si un sous-formulaire repas est sélectionné)
   const effectivePage: LogType = (selectedFormPage ?? page) as LogType;
@@ -136,7 +136,7 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
             <SquareButton
               icon={<Utensils />}
               label="Solide"
-              onClick={() => { setSelectedFormPage("bottle"); setShowForm(true); }}
+              onClick={() => { setSelectedFormPage("meal"); setShowForm(true); }}
             />
             <SquareButton
               icon={<Heart />}

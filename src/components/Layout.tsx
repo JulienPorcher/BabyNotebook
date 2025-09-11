@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Home, Utensils, Activity, Settings, Baby } from "lucide-react";
-import BabySelector from "../components/BabySelector"; // <-- import
+import { useBaby } from "../context/BabyContext";
 
 const tabs = [
   { path: "/", icon: <Home size={24} /> },
@@ -13,22 +13,16 @@ const tabs = [
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const hideBabySelector = location.pathname === "/settings";
+  const { currentBaby } = useBaby();
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="bg-white shadow-md p-4 flex justify-center">
-        <h1 className="text-xl font-bold">Carnet de Bébé 👶</h1>
+        <h1 className="text-xl font-bold">
+          {currentBaby ? `Carnet de ${currentBaby.name}` : 'Carnet de Bébé 👶'}
+        </h1>
       </header>
-
-      {/* Baby selector sauf sur Settings */}
-      {!hideBabySelector && (
-        <div className="p-2 border-b bg-gray-50">
-          <BabySelector />
-        </div>
-      )}
 
       {/* Main */}
       <main className="flex-1 overflow-y-auto">
