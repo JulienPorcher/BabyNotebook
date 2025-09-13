@@ -1,14 +1,27 @@
 import { useState } from "react";
+import { breastFormConfig } from "./BreastForm";
+import { mealFormConfig } from "./MealForm";
+import { bathFormConfig } from "./BathForm";
+import { bottleFormConfig } from "./BottleForm";
+import { pumpFormConfig } from "./PumpForm";
+import { diaperFormConfig } from "./DiaperForm";
+import { activityFormConfig } from "./ActivityForm";
+import { weightFormConfig } from "./WeightForm";
+import { measureFormConfig } from "./MeasureForm";
+import { babyFormConfig } from "./BabyForm";
+import { MealFormComponent, BottleFormComponent, DiaperFormComponent, BreastFormComponent } from "./components";
 
-export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal';
+export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal' | 'breast' | 'baby';
 
 interface FormField {
   name: string;
-  type: 'text' | 'number' | 'textarea' | 'datetime-local' | 'date';
+  type: 'text' | 'number' | 'textarea' | 'datetime-local' | 'date' | 'select';
   placeholder?: string;
   label?: string;
   required?: boolean;
+  defaultValue?: string;
   step?: string;
+  options?: { label: string; value: string }[];
 }
 
 interface FormConfig {
@@ -19,88 +32,16 @@ interface FormConfig {
 }
 
 const formConfigs: Record<FormPage, FormConfig> = {
-  meal: {
-    title: "Ajouter un repas",
-    fields: [
-      { name: 'dateTime', type: 'datetime-local', required: true },
-      { name: 'type', type: 'text', placeholder: 'Type (biberon, solide...)', required: true },
-      { name: 'quantity', type: 'number', placeholder: 'Quantité' },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },
-  bath: {
-    title: "Ajouter un bain",
-    fields: [
-      { name: 'date', type: 'datetime-local', required: true },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-green-500',
-    isModal: true
-  },
-  bottle: {
-    title: "Ajouter un biberon",
-    fields: [
-      { name: 'dateTime', type: 'datetime-local', required: true },
-      { name: 'type', type: 'text', placeholder: 'Type (biberon, purée...)', required: true },
-      { name: 'quantity', type: 'number', placeholder: 'Quantité' },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },pump: {
-    title: "Ajouter une expression",
-    fields: [
-      { name: 'dateTime', type: 'datetime-local', required: true },
-      { name: 'type', type: 'text', placeholder: 'Type (biberon, purée...)', required: true },
-      { name: 'quantity', type: 'number', placeholder: 'Quantité' },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },
-  diaper: {
-    title: "Ajouter une couche",
-    fields: [
-      { name: 'dateTime', type: 'datetime-local', required: true },
-      { name: 'type', type: 'text', placeholder: 'Type (pipi, caca, mixte)', required: true },
-      { name: 'quantity', type: 'text', placeholder: 'Quantité' },
-      { name: 'comment', type: 'textarea', placeholder: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-green-500',
-    isModal: true
-  },
-  activity: {
-    title: "Ajouter une activité",
-    fields: [
-      { name: 'date', type: 'date', label: 'Date' },
-      { name: 'title', type: 'text', label: 'Titre' },
-      { name: 'description', type: 'textarea', label: 'Description' }
-    ],
-    submitButtonColor: 'bg-blue-500',
-    isModal: true
-  },
-  weight: {
-    title: "Ajouter un poids",
-    fields: [
-      { name: 'date', type: 'date', label: 'Date' },
-      { name: 'weight', type: 'number', label: 'Poids (kg)', step: '0.01' },
-      { name: 'comment', type: 'textarea', label: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-purple-500',
-    isModal: true
-  },
-  measure: {
-    title: "Ajouter une mesure",
-    fields: [
-      { name: 'date', type: 'date', label: 'Date' },
-      { name: 'height', type: 'number', label: 'Taille (cm)' },
-      { name: 'comment', type: 'textarea', label: 'Commentaire' }
-    ],
-    submitButtonColor: 'bg-green-500',
-    isModal: true
-  }
+  meal: mealFormConfig,
+  bath: bathFormConfig,
+  bottle: bottleFormConfig,
+  pump: pumpFormConfig,
+  diaper: diaperFormConfig,
+  activity: activityFormConfig,
+  weight: weightFormConfig,
+  measure: measureFormConfig,
+  breast: breastFormConfig,
+  baby: babyFormConfig
 };
 
 interface UnifiedFormProps {
@@ -108,11 +49,54 @@ interface UnifiedFormProps {
   onSubmit: (data: Record<string, any>) => void | Promise<void>;
   onClose?: () => void;
   initialValues?: Record<string, any>;
+  babyId?: string;
 }
 
-export default function UnifiedForm({ page, onSubmit, onClose, initialValues }: UnifiedFormProps) {
+// Factory function to get the appropriate form component
+export function getFormComponent(page: FormPage) {
+  switch (page) {
+    case 'meal':
+      return MealFormComponent;
+    case 'bottle':
+      return BottleFormComponent;
+    case 'diaper':
+      return DiaperFormComponent;
+    case 'breast':
+      return BreastFormComponent;
+    default:
+      return null; // Use basic UnifiedForm for other types
+  }
+}
+
+export default function UnifiedForm({ page, onSubmit, onClose, initialValues, babyId }: UnifiedFormProps) {
+  // Check if there's a specialized component for this page
+  const SpecializedComponent = getFormComponent(page);
+  
+  if (SpecializedComponent) {
+    return (
+      <SpecializedComponent
+        onSubmit={(data) => onSubmit(data)}
+        onClose={onClose || (() => {})}
+        initialValues={initialValues}
+        babyId={babyId}
+      />
+    );
+  }
+
+
   const config = formConfigs[page];
   const [formData, setFormData] = useState<Record<string, any>>(initialValues || {});
+
+  // Get last bottle type from localStorage
+  const getLastBottleType = () => {
+    if (page === 'bottle' && babyId) {
+      const key = `lastBottleType_${babyId}`;
+      return localStorage.getItem(key) || undefined;
+    }
+    return undefined;
+  };
+
+  const lastBottleType = getLastBottleType();
 
   const handleInputChange = (fieldName: string, value: any) => {
     setFormData(prev => ({
@@ -142,6 +126,12 @@ export default function UnifiedForm({ page, onSubmit, onClose, initialValues }: 
 
     await onSubmit(processedData);
     
+    // Save last bottle type to localStorage if it's a bottle form
+    if (page === 'bottle' && babyId && processedData.type) {
+      const key = `lastBottleType_${babyId}`;
+      localStorage.setItem(key, processedData.type);
+    }
+    
     // Reset form
     setFormData({});
     
@@ -152,9 +142,15 @@ export default function UnifiedForm({ page, onSubmit, onClose, initialValues }: 
   };
 
   const renderField = (field: FormField) => {
+    // Special handling for bottle type field
+    let fieldValue = formData[field.name] || field.defaultValue || '';
+    if (field.name === 'type' && page === 'bottle' && lastBottleType && !formData[field.name]) {
+      fieldValue = lastBottleType;
+    }
+
     const commonProps = {
-      value: formData[field.name] || '',
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
+      value: fieldValue,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => 
         handleInputChange(field.name, e.target.value),
       className: "w-full border rounded-xl p-2",
       required: field.required,
@@ -168,6 +164,19 @@ export default function UnifiedForm({ page, onSubmit, onClose, initialValues }: 
           {...commonProps}
           rows={3}
         />
+      );
+    }
+
+    if (field.type === 'select') {
+      return (
+        <select {...commonProps}>
+          <option value="">{field.placeholder}</option>
+          {field.options?.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       );
     }
 

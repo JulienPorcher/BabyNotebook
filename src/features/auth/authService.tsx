@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 export async function signInWithProvider(provider: 'google' | 'apple') {
   const { error } = await supabase.auth.signInWithOAuth({ provider });
@@ -24,6 +25,17 @@ export default function SignupForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (message?.startsWith("✅")) {
+      const timer = setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+
+      return () => clearTimeout(timer); // nettoyage si l’utilisateur quitte avant la fin
+    }
+  }, [message, navigate]);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();

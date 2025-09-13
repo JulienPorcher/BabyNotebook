@@ -3,11 +3,14 @@ import { Utensils, Baby, Activity, Bath, Ruler, Scale, Heart, HeartPlus, Milk } 
 import type { JSX } from "react";
 import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
 import { useBaby } from "../../context/BabyContext";
+import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
+import BabySelector from "../components/BabySelector";
 
 
 export default function HomePage() {
-  const { currentBabyId } = useBaby();
+  const { currentBabyId, babies, loading, setCurrentBabyId, refreshBabies } = useBaby();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [currentFormPage, setCurrentFormPage] = useState<FormPage | null>(null);
 
@@ -15,30 +18,43 @@ export default function HomePage() {
   const getTableName = (page: FormPage): string => {
     const tableMap: Record<FormPage, string> = {
       meal: 'meals',
-      bottle: 'meals',
-      pump: 'meals',
+      bottle: 'bottles',
+      pump: 'pumps',
       diaper: 'diapers',
       activity: 'activities',
       bath: 'baths',
       weight: 'weights',
-      measure: 'measures'
+      measure: 'measures',
+      breast: 'breastfeeding',
+      baby: 'babies'
     };
     return tableMap[page];
   };
 
   const handleFormSubmit = async (formData: Record<string, any>) => {
-    if (!currentBabyId || !currentFormPage) return;
+    if (!currentFormPage || !user?.id) return;
 
     try {
       const tableName = getTableName(currentFormPage);
+      
+      // For baby creation, add user_id and don't add baby_id (it's the baby being created)
+      const insertData = currentFormPage === 'baby' 
+        ? { ...formData, owner_id: user.id }
+        : { ...formData, baby_id: currentBabyId, user_id: user.id };
+
       const { error } = await supabase
         .from(tableName)
-        .insert([{ ...formData, baby_id: currentBabyId }]);
+        .insert([insertData]);
 
       if (error) {
         console.error("Error adding entry:", error);
       } else {
         console.log("Entry added successfully");
+        // If it's a baby creation, refresh the baby list
+        if (currentFormPage === 'baby') {
+          console.log("Baby created successfully!");
+          await refreshBabies();
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -55,8 +71,28 @@ export default function HomePage() {
     setCurrentFormPage(null);
   };
 
+  const handleSelectBaby = (babyId: string) => {
+    setCurrentBabyId(babyId);
+  };
+
+  // Debug logging
+  console.log('HomePage - babies:', babies);
+  console.log('HomePage - loading:', loading);
+  console.log('HomePage - user:', user);
+
   return (
     <div className="p-4 space-y-4">
+      {/* Debug Test */}
+      {/*<SupabaseTest />*/}
+      
+      {/* Baby Selector */}
+      <BabySelector
+        babies={babies}
+        currentBabyId={currentBabyId}
+        onSelectBaby={handleSelectBaby}
+        loading={loading}
+      />
+
       {/* Bloc 1 : Infos récentes */}
       <div className="bg-white rounded-2xl shadow p-4">
         <h2 className="text-lg font-semibold mb-3">Dernières infos</h2>
@@ -72,8 +108,8 @@ export default function HomePage() {
         <h2 className="text-lg font-semibold mb-3">Ajouter</h2>
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
           <ActionButton icon={<Milk />} label="Biberon" onClick={() => handleActionButtonClick("bottle")} />
-          <ActionButton icon={<Utensils />} label="Solide" onClick={() => handleActionButtonClick("bottle")} />
-          <ActionButton icon={<Heart />} label="Allaitement" onClick={() => handleActionButtonClick("pump")} />
+          <ActionButton icon={<Utensils />} label="Solide" onClick={() => handleActionButtonClick("meal")} />
+          <ActionButton icon={<Heart />} label="Allaitement" onClick={() => handleActionButtonClick("breast")} />
           <ActionButton icon={<HeartPlus />} label="Expression" onClick={() => handleActionButtonClick("pump")} />
           <ActionButton icon={<Baby />} label="Couche" onClick={() => handleActionButtonClick("diaper")} />
           <ActionButton icon={<Activity />} label="Activité" onClick={() => handleActionButtonClick("activity")} />
@@ -92,9 +128,14 @@ export default function HomePage() {
       </div>
       {/* Bloc 4 : Gestion des bébés */}
       <div className="bg-white rounded-2xl shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Gestion des bébés</h2>
+          <h2 className="text-lg font-semibold mb-3">Gestion des Carnets</h2>
           <div className="flex gap-2">
-            <button className="flex-1 bg-blue-500 text-white rounded-xl p-3">Créer un carnet</button>
+            <button 
+              onClick={() => handleActionButtonClick("baby")}
+              className="flex-1 bg-blue-500 text-white rounded-xl p-3"
+            >
+              Créer un carnet
+            </button>
             <button className="flex-1 bg-green-500 text-white rounded-xl p-3">Ajouter un carnet</button>
             <button className="flex-1 bg-purple-500 text-white rounded-xl p-3">Partager un carnet</button>
           </div>

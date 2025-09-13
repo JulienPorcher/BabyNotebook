@@ -37,7 +37,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Contenu du sous-onglet */}
-      <div>
+      <div className="bg-white rounded-2xl shadow p-4">
         {activeTab === "meals" && <BabyLogPage page="meal"/>}
         {activeTab === "diapers" && <BabyLogPage page="diaper" />}
         {activeTab === "baths" && <BabyLogPage page="bath" />}
