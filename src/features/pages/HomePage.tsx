@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Utensils, Baby, Activity, Bath, Ruler, Scale, Heart, HeartPlus, Milk } from "lucide-react";
 import type { JSX } from "react";
+import { useNavigate } from "react-router-dom";
 import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
 import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
@@ -11,6 +12,7 @@ import BabySelector from "../components/BabySelector";
 export default function HomePage() {
   const { currentBabyId, babies, loading, setCurrentBabyId, refreshBabies } = useBaby();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [currentFormPage, setCurrentFormPage] = useState<FormPage | null>(null);
 
@@ -75,6 +77,14 @@ export default function HomePage() {
     setCurrentBabyId(babyId);
   };
 
+  const handleShareCarnet = () => {
+    if (!currentBabyId) {
+      alert("Veuillez sélectionner un carnet avant de le partager");
+      return;
+    }
+    navigate("/share");
+  };
+
   // Debug logging
   console.log('HomePage - babies:', babies);
   console.log('HomePage - loading:', loading);
@@ -137,7 +147,12 @@ export default function HomePage() {
               Créer un carnet
             </button>
             <button className="flex-1 bg-green-500 text-white rounded-xl p-3">Ajouter un carnet</button>
-            <button className="flex-1 bg-purple-500 text-white rounded-xl p-3">Partager un carnet</button>
+            <button 
+              onClick={handleShareCarnet}
+              className="flex-1 bg-purple-500 text-white rounded-xl p-3"
+            >
+              Partager ce carnet
+            </button>
           </div>
       </div>
       {/* Form Modal */}

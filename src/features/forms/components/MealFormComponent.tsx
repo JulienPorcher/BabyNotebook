@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Apple, Wheat, Leaf, Ham, Milk, ChefHat } from "lucide-react";
-import { getRoundedDateTime } from "../formHelpers";
+import { getRoundedDateTime, useFormSubmission } from "../formHelpers";
+import FormWrapper from "./FormWrapper";
 
 interface MealFormComponentProps {
   onSubmit: (data: Record<string, any>) => void | Promise<void>;
@@ -24,6 +25,8 @@ export default function MealFormComponent({ onSubmit, onClose, babyId }: MealFor
   const [dateTime, setDateTime] = useState(getRoundedDateTime());
   const [comment, setComment] = useState<string>('');
   const [nom, setNom] = useState<string>('');
+
+  const { error, isSubmitting, handleSubmit } = useFormSubmission({ onSubmit, onClose });
 
   const handleManualQuantity = (id: string, value: string) => {
     setManualQuantity((prev) => ({
@@ -61,104 +64,94 @@ export default function MealFormComponent({ onSubmit, onClose, babyId }: MealFor
     
     // Save as last meal for copy functionality
     localStorage.setItem(`lastMeal_${babyId}`, JSON.stringify(submitData));
-    await onSubmit(submitData);
+    await handleSubmit(submitData);
+ 
   };
 
  
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-6 w-96 space-y-4">
-        <h2 className="text-lg font-semibold text-center">Ajouter un repas</h2>
-        {/* Date/Time Field */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Date et heure</label>
-          <input
-            type="datetime-local"
-            value={dateTime}
-            onChange={(e) => setDateTime(e.target.value)}
-            className="w-full border rounded-lg p-2"
-          />
-        </div>
-        {/* Manual quantity input */}
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Nutriments</h3>
-        <div className="grid grid-cols-2 gap-4 mb-3">
-          {mealsDetails.map((item) => (
-            <div key={item.id} className="relative">
-              {/* Icône à gauche */}
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                {item.icon}
-              </span>
-
-              {/* Input */}
-              <input
-                type="number"
-                value={manualQuantity[item.id] || ""}
-                className={`w-full pl-9 pr-10 py-3 rounded-lg placeholder-gray-400 ${item.color}`}
-                onChange={(e) => handleManualQuantity(item.id, e.target.value)} // 👈 passe l’id + valeur
-              />
-              {/* Label qui joue le rôle de placeholder */}
-              {!manualQuantity[item.id] && (
-                  <label
-                    htmlFor={item.id}
-                    className="absolute left-9 right-10 top-1/2 -translate-y-1/2 text-gray-400 text-sm leading-tight pointer-events-none whitespace-normal"
-                  >
-                    {item.label}
-                  </label>
-                )}
-              {/*Unité */}
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                gr
-              </span>
-            </div>
-          ))}
-        </div>
-        {/* Additional meal-specific actions */}
-        <div className="mt-4 flex gap-2">
-          <input
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            className="w-full border rounded-lg p-2"
-            placeholder="Nom du repas (optionnel)"
-          />
-          {/*<button
-            onClick={handleSaveAsTemplate}
-            className="flex items-center gap-2 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm"
-          >
-            <Save className="w-4 h-4" />
-            Sauvegarder modèle
-          </button>*/}
-        </div>
-        
-        {/* Comment Field */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Commentaire</label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="w-full border rounded-lg p-2"
-            rows={3}
-            placeholder="Commentaire..."
-          />
-        </div>
-        {/* Submit Buttons */}
-        <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-200 py-2 rounded-lg"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={handleFormSubmit}
-              className="flex-1 bg-pink-500 text-white py-2 rounded-lg"
-            >
-              Enregistrer
-            </button>
-          </div>
+    <FormWrapper
+      title="Ajouter un repas"
+      onSubmit={handleFormSubmit}
+      onClose={onClose}
+      error={error}
+      isSubmitting={isSubmitting}
+      submitButtonColor="bg-pink-500"
+    >
+      {/* Date/Time Field */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Date et heure</label>
+        <input
+          type="datetime-local"
+          value={dateTime}
+          onChange={(e) => setDateTime(e.target.value)}
+          className="w-full border rounded-lg p-2"
+        />
       </div>
-    </div>
+      {/* Manual quantity input */}
+      <h3 className="text-sm font-medium text-gray-700 mb-2">Nutriments</h3>
+      <div className="grid grid-cols-2 gap-4 mb-3">
+        {mealsDetails.map((item) => (
+          <div key={item.id} className="relative">
+            {/* Icône à gauche */}
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              {item.icon}
+            </span>
+
+            {/* Input */}
+            <input
+              type="number"
+              value={manualQuantity[item.id] || ""}
+              className={`w-full pl-9 pr-10 py-3 rounded-lg placeholder-gray-400 ${item.color}`}
+              onChange={(e) => handleManualQuantity(item.id, e.target.value)} // 👈 passe l’id + valeur
+            />
+            {/* Label qui joue le rôle de placeholder */}
+            {!manualQuantity[item.id] && (
+                <label
+                  htmlFor={item.id}
+                  className="absolute left-9 right-10 top-1/2 -translate-y-1/2 text-gray-400 text-sm leading-tight pointer-events-none whitespace-normal"
+                >
+                  {item.label}
+                </label>
+              )}
+            {/*Unité */}
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+              gr
+            </span>
+          </div>
+        ))}
+      </div>
+      {/* Additional meal-specific actions */}
+      <div className="mt-4 flex gap-2">
+        <input
+          type="text"
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          className="w-full border rounded-lg p-2"
+          placeholder="Nom du repas (optionnel)"
+        />
+        {/*<button
+          onClick={handleSaveAsTemplate}
+          className="flex items-center gap-2 bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm"
+        >
+          <Save className="w-4 h-4" />
+          Sauvegarder modèle
+        </button>*/}
+      </div>
+      
+      {/* Comment Field */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Commentaire</label>
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="w-full border rounded-lg p-2"
+          rows={3}
+          placeholder="Commentaire..."
+        />
+      </div>
+    </FormWrapper>
   );
 }

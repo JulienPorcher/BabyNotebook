@@ -61,7 +61,6 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   const [logs, setLogs] = useState<LogEntry<typeof page>[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [initialFormValues, setInitialFormValues] = useState<Record<string, any> | undefined>(undefined);
   const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | "breast" | "meal" | null>(null);
 
   // Page effective (si un sous-formulaire repas est sélectionné)
@@ -210,9 +209,8 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
       {showForm && (
         <UnifiedForm
           page={effectivePage}
-          initialValues={initialFormValues}
           onSubmit={handleFormSubmit}
-          onClose={() => { setShowForm(false); setInitialFormValues(undefined); setSelectedFormPage(null); }}
+          onClose={() => { setShowForm(false); setSelectedFormPage(null); }}
           babyId={currentBabyId || undefined}
         />
       )}
