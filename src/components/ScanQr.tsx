@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { QrReader } from "react-qr-reader";
+import { Scanner } from "@yudiel/react-qr-scanner";
 import { supabase } from "../lib/supabaseClient";
 
 export default function ScanQr() {
@@ -38,7 +38,14 @@ export default function ScanQr() {
 
   return (
     <div className="space-y-4">
-      <QrReader onResult={(result: any) => handleScan(result?.getText() || null)} />
+      <Scanner
+        onScan={(detectedCodes) => {
+          if (detectedCodes.length > 0) {
+            handleScan(detectedCodes[0].rawValue);
+          }
+        }}
+        onError={(error: unknown) => console.error(error)}
+      />
       
       {status && (
         <p className="text-green-600 text-center">{status}</p>
