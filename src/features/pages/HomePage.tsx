@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Utensils, Baby, Activity, Bath, Ruler, Scale, Heart, HeartPlus, Milk } from "lucide-react";
+import { Utensils, Baby, Activity, Bath, Ruler, Scale, Heart, HeartPlus, Milk, QrCode } from "lucide-react";
 import type { JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
@@ -7,6 +7,7 @@ import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
 import BabySelector from "../components/BabySelector";
+import ScanQr from "../../components/ScanQr";
 
 
 export default function HomePage() {
@@ -15,6 +16,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [currentFormPage, setCurrentFormPage] = useState<FormPage | null>(null);
+  const [showQrScanner, setShowQrScanner] = useState(false);
 
   // Map form pages to their corresponding database tables
   const getTableName = (page: FormPage): string => {
@@ -71,6 +73,16 @@ export default function HomePage() {
   const handleCloseForm = () => {
     setShowForm(false);
     setCurrentFormPage(null);
+  };
+
+  const handleCloseQrScanner = () => {
+    setShowQrScanner(false);
+  };
+
+  const handleQrScanSuccess = () => {
+    // Refresh babies list after successful QR scan
+    refreshBabies();
+    setShowQrScanner(false);
   };
 
   const handleSelectBaby = (babyId: string) => {
@@ -146,7 +158,13 @@ export default function HomePage() {
             >
               Créer un carnet
             </button>
-            <button className="flex-1 bg-green-500 text-white rounded-xl p-3">Ajouter un carnet</button>
+            <button 
+              onClick={() => setShowQrScanner(true)}
+              className="flex-1 bg-green-500 text-white rounded-xl p-3 flex items-center justify-center gap-2"
+            >
+              <QrCode size={16} />
+              Ajouter un carnet
+            </button>
             <button 
               onClick={handleShareCarnet}
               className="flex-1 bg-purple-500 text-white rounded-xl p-3"
@@ -162,6 +180,32 @@ export default function HomePage() {
           onSubmit={handleFormSubmit}
           onClose={handleCloseForm}
         />
+      )}
+
+      {/* QR Scanner Modal */}
+      {showQrScanner && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Scanner un QR Code</h2>
+              <button
+                onClick={handleCloseQrScanner}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <ScanQr onSuccess={handleQrScanSuccess} />
+            <div className="mt-4 text-center">
+              <button
+                onClick={handleCloseQrScanner}
+                className="bg-gray-500 text-white rounded-xl px-4 py-2"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
