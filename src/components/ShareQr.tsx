@@ -13,7 +13,7 @@ export default function ShareQr({ babyId }: { babyId: string }) {
     
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      const res = await fetch("/functions/share/createQrShare", {
+      const res = await fetch("/functions/v1/share/create-qr-share", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

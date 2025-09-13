@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { supabase } from "../lib/supabaseClient";
 
-export default function ScanQr() {
+export default function ScanQr({ onSuccess }: { onSuccess?: () => void }) {
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string>("");
 
@@ -30,6 +30,11 @@ export default function ScanQr() {
 
       const result = await res.json();
       setStatus(result.message || "Carnet partagé avec succès !");
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
       setStatus("");

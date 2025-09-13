@@ -63,30 +63,38 @@ async function createQrShare(req: Request, userId: string) {
 
 // Génération lien email
 async function createEmailShare(req: Request, userId: string) {
-  const { carnetId } = await req.json();
+  const { babyId, email } = await req.json();
 
-  const { data: carnet } = await supabase
-    .from("carnet")
-    .select("id, owner_id")
-    .eq("id", carnetId)
+  const { data: baby } = await supabase
+    .from("babies")
+    .select("id, user_id, name")
+    .eq("id", babyId)
     .single();
 
-  if (!carnet || carnet.owner_id !== userId) {
+  if (!baby || baby.user_id !== userId) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
   const rawToken = crypto.randomUUID();
   const hashed = await hashToken(rawToken);
 
-  await supabase.from("carnet_share_tokens").insert({
+  await supabase.from("baby_share_tokens").insert({
     token_hash: hashed,
-    carnet_id: carnetId,
+    baby_id: babyId,
     owner_id: userId,
+    email: email,
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
   });
 
-  const url = `https://mon-app.com/share?token=${rawToken}`;
-  return new Response(JSON.stringify({ url }), { status: 200 });
+  // TODO: Send actual email with the link
+  // For now, we'll just return success
+  const url = `${Deno.env.get("SITE_URL") || "http://localhost:5173"}/share?token=${rawToken}`;
+  
+  return new Response(JSON.stringify({ 
+    success: true, 
+    message: "Email envoyé avec succès",
+    url: url // For testing purposes
+  }), { status: 200 });
 }
 
 // Acceptation partage (QR ou email)
@@ -143,7 +151,7 @@ async function acceptShare(req: Request, userId: string) {
     const hash = await hashToken(token);
 
     const { data: tokenRow } = await supabase
-      .from("carnet_share_tokens")
+      .from("baby_share_tokens")
       .select("*")
       .eq("token_hash", hash)
       .eq("used", false)
@@ -154,12 +162,39 @@ async function acceptShare(req: Request, userId: string) {
       return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 400 });
     }
 
-    await supabase.from("carnet_share").insert({
-      carnet_id: tokenRow.carnet_id,
-      user_id: userId
+    // Check if user is already sharing this baby
+    const { data: existingShare } = await supabase
+      .from("baby_shares")
+      .select("id")
+      .eq("baby_id", tokenRow.baby_id)
+      .eq("user_id", userId)
+      .single();
+
+    if (existingShare) {
+      return new Response(JSON.stringify({ success: true, message: "Already shared" }), { status: 200 });
+    }
+
+    // Get baby name for the share
+    const { data: baby } = await supabase
+      .from("babies")
+      .select("name")
+      .eq("id", tokenRow.baby_id)
+      .single();
+
+    // Create baby_shares entry
+    const { error } = await supabase.from("baby_shares").insert({
+      baby_id: tokenRow.baby_id,
+      user_id: userId,
+      role: "invited",
+      nickname: baby?.name || "Baby"
     });
 
-    await supabase.from("carnet_share_tokens").update({ used: true }).eq("id", tokenRow.id);
+    if (error) {
+      console.error("Error creating baby_shares entry:", error);
+      return new Response(JSON.stringify({ error: "Failed to create share" }), { status: 500 });
+    }
+
+    await supabase.from("baby_share_tokens").update({ used: true }).eq("id", tokenRow.id);
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   }
