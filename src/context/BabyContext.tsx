@@ -8,7 +8,9 @@ type Baby = {
   name: string;
   birth_date: string;
   gender: string;
-  owner_id: string;
+  user_id: string;
+  role: string;
+  nickname: string;
 };
 
 type BabyContextType = {
@@ -67,9 +69,9 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Fetching babies for user:', user.id);
       const { data, error } = await supabase
-        .from('babies')
+        .from('view_baby_list')
         .select('*')
-        .eq('owner_id', user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {

@@ -10,6 +10,8 @@ import { weightFormConfig } from "./WeightForm";
 import { measureFormConfig } from "./MeasureForm";
 import { babyFormConfig } from "./BabyForm";
 import { MealFormComponent, BottleFormComponent, DiaperFormComponent, BreastFormComponent } from "./components";
+import { useFormSubmission } from "./formHelpers";
+import FormWrapper from "./components/FormWrapper";
 
 export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal' | 'breast' | 'baby';
 
@@ -48,129 +50,64 @@ interface UnifiedFormProps {
   page: FormPage;
   onSubmit: (data: Record<string, any>) => void | Promise<void>;
   onClose?: () => void;
-  initialValues?: Record<string, any>;
   babyId?: string;
 }
 
-// Factory function to get the appropriate form component
-export function getFormComponent(page: FormPage) {
-  switch (page) {
-    case 'meal':
-      return MealFormComponent;
-    case 'bottle':
-      return BottleFormComponent;
-    case 'diaper':
-      return DiaperFormComponent;
-    case 'breast':
-      return BreastFormComponent;
-    default:
-      return null; // Use basic UnifiedForm for other types
-  }
-}
-
-export default function UnifiedForm({ page, onSubmit, onClose, initialValues, babyId }: UnifiedFormProps) {
-  // Check if there's a specialized component for this page
-  const SpecializedComponent = getFormComponent(page);
-  
-  if (SpecializedComponent) {
-    return (
-      <SpecializedComponent
-        onSubmit={(data) => onSubmit(data)}
-        onClose={onClose || (() => {})}
-        initialValues={initialValues}
-        babyId={babyId}
-      />
-    );
-  }
-
-
+export default function UnifiedForm({ page, onSubmit, onClose, babyId }: UnifiedFormProps) {
+  const [formData, setFormData] = useState<Record<string, any>>({});
   const config = formConfigs[page];
-  const [formData, setFormData] = useState<Record<string, any>>(initialValues || {});
 
-  // Get last bottle type from localStorage
-  const getLastBottleType = () => {
-    if (page === 'bottle' && babyId) {
-      const key = `lastBottleType_${babyId}`;
-      return localStorage.getItem(key) || undefined;
+  const { error, isSubmitting, handleSubmit } = useFormSubmission({ onSubmit, onClose });
+
+  // Specialized components
+  const getFormComponent = () => {
+    switch (page) {
+      case 'meal':
+        return <MealFormComponent onSubmit={onSubmit} onClose={onClose} babyId={babyId} />;
+      case 'bottle':
+        return <BottleFormComponent onSubmit={onSubmit} onClose={onClose} babyId={babyId} />;
+      case 'diaper':
+        return <DiaperFormComponent onSubmit={onSubmit} onClose={onClose} babyId={babyId} />;
+      case 'breast':
+        return <BreastFormComponent onSubmit={onSubmit} onClose={onClose || (() => {})} />;
+      default:
+        return null;
     }
-    return undefined;
   };
 
-  const lastBottleType = getLastBottleType();
+  const SpecializedComponent = getFormComponent();
+  if (SpecializedComponent) {
+    return SpecializedComponent;
+  }
 
-  const handleInputChange = (fieldName: string, value: any) => {
+  const handleInputChange = (name: string, value: string | number) => {
     setFormData(prev => ({
       ...prev,
-      [fieldName]: value
+      [name]: value
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate required fields
-    const requiredFields = config.fields.filter(field => field.required);
-    const missingFields = requiredFields.filter(field => !formData[field.name]);
-    
-    if (missingFields.length > 0) {
-      return;
-    }
-
-    // Convert numeric fields
-    const processedData = { ...formData };
-    config.fields.forEach(field => {
-      if (field.type === 'number' && processedData[field.name] !== undefined) {
-        processedData[field.name] = Number(processedData[field.name]);
-      }
-    });
-
-    await onSubmit(processedData);
-    
-    // Save last bottle type to localStorage if it's a bottle form
-    if (page === 'bottle' && babyId && processedData.type) {
-      const key = `lastBottleType_${babyId}`;
-      localStorage.setItem(key, processedData.type);
-    }
-    
-    // Reset form
-    setFormData({});
-    
-    // Close modal if applicable
-    if (config.isModal && onClose) {
-      onClose();
-    }
-  };
 
   const renderField = (field: FormField) => {
-    // Special handling for bottle type field
-    let fieldValue = formData[field.name] || field.defaultValue || '';
-    if (field.name === 'type' && page === 'bottle' && lastBottleType && !formData[field.name]) {
-      fieldValue = lastBottleType;
-    }
-
     const commonProps = {
-      value: fieldValue,
+      name: field.name,
+      value: formData[field.name] || field.defaultValue || '',
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => 
         handleInputChange(field.name, e.target.value),
-      className: "w-full border rounded-xl p-2",
-      required: field.required,
       placeholder: field.placeholder,
-      step: field.step
+      required: field.required,
+      step: field.step,
+      className: "w-full border rounded-lg p-2"
     };
 
     if (field.type === 'textarea') {
-      return (
-        <textarea
-          {...commonProps}
-          rows={3}
-        />
-      );
+      return <textarea {...commonProps} rows={3} />;
     }
 
     if (field.type === 'select') {
       return (
         <select {...commonProps}>
-          <option value="">{field.placeholder}</option>
+          <option value="">Sélectionner...</option>
           {field.options?.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -188,10 +125,41 @@ export default function UnifiedForm({ page, onSubmit, onClose, initialValues, ba
     );
   };
 
-  const formContent = (
-    <form onSubmit={handleSubmit} className={config.isModal ? "bg-white rounded-2xl shadow-lg p-6 w-80 space-y-3" : "space-y-3"}>
-      <h2 className="text-lg font-semibold">{config.title}</h2>
+  return (
+    <FormWrapper
+      title={config.title}
+      onSubmit={async () => {
+        // Validate required fields
+        const requiredFields = config.fields.filter(field => field.required);
+        const missingFields = requiredFields.filter(field => {
+          const value = formData[field.name] || field.defaultValue || '';
+          return !value;
+        });
+        
+        if (missingFields.length > 0) {
+          console.log('Missing required fields:', missingFields.map(f => f.name));
+          return;
+        }
 
+        // Convert numeric fields and include default values
+        const processedData = { ...formData };
+        config.fields.forEach(field => {
+          const value = processedData[field.name] || field.defaultValue || '';
+          if (field.type === 'number' && value !== undefined && value !== '') {
+            processedData[field.name] = Number(value);
+          } else if (value) {
+            processedData[field.name] = value;
+          }
+        });
+
+        console.log('Submitting data:', processedData);
+        await handleSubmit(processedData);
+      }}
+      onClose={onClose}
+      error={error}
+      isSubmitting={isSubmitting}
+      submitButtonColor={config.submitButtonColor}
+    >
       {config.fields.map((field) => (
         <div key={field.name}>
           {field.label && (
@@ -200,34 +168,6 @@ export default function UnifiedForm({ page, onSubmit, onClose, initialValues, ba
           {renderField(field)}
         </div>
       ))}
-
-      <div className={config.isModal ? "flex justify-end gap-2" : ""}>
-        {config.isModal && onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-gray-200 px-3 py-2 rounded-xl"
-          >
-            Annuler
-          </button>
-        )}
-        <button
-          type="submit"
-          className={`${config.submitButtonColor} text-white ${config.isModal ? 'px-3 py-2 rounded-xl' : 'w-full p-2 rounded-xl'}`}
-        >
-          Enregistrer
-        </button>
-      </div>
-    </form>
+    </FormWrapper>
   );
-
-  if (config.isModal) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-        {formContent}
-      </div>
-    );
-  }
-
-  return formContent;
 }

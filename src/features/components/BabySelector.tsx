@@ -1,12 +1,14 @@
 import { Baby } from "lucide-react";
 
 interface BabyData {
-  id: string;
-  name: string;
-  birth_date: string;
-  gender: string;
-  owner_id: string;
-}
+    id: string;
+    name: string;
+    birth_date: string;
+    gender: string;
+    user_id: string;
+    role: string;
+    nickname: string;
+  }
 
 interface BabySelectorProps {
   babies: BabyData[];

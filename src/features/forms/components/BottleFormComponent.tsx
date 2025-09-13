@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Milk } from "lucide-react";
-import { getRoundedDateTime } from "../formHelpers";
+import { getRoundedDateTime, useFormSubmission } from "../formHelpers";
+import FormWrapper from "./FormWrapper";
 
 interface BottleFormComponentProps {
   onSubmit: (data: Record<string, any>) => void | Promise<void>;
@@ -19,6 +20,8 @@ export default function BottleFormComponent({ onSubmit, onClose, initialValues, 
   const [manualQuantity, setManualQuantity] = useState<string>('');
   const [comment, setComment] = useState("");
   const [dateTime, setDateTime] = useState(getRoundedDateTime());
+  const { error, isSubmitting, handleSubmit } = useFormSubmission({ onSubmit, onClose });
+
 
   const handleQuickQuantity = (quantity: number) => {
     setSelectedQuantity(quantity.toString());
@@ -56,15 +59,18 @@ export default function BottleFormComponent({ onSubmit, onClose, initialValues, 
       comment: comment
     };
     localStorage.setItem(`lastBottle_${babyId}`, JSON.stringify(submitData));
-    await onSubmit(submitData);
-    setFormValues({});
+    await handleSubmit(submitData);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-6 w-96 space-y-4">
-        <h2 className="text-lg font-semibold text-center">Ajouter un biberon</h2>
-      
+    <FormWrapper
+      title="Ajouter un biberon"
+      onSubmit={handleFormSubmit}
+      onClose={onClose}
+      error={error}
+      isSubmitting={isSubmitting}
+      submitButtonColor="bg-blue-500"
+    >
         {/* Date/Time Field */}
         <div>
           <label className="block text-sm font-medium mb-1">Date et heure</label>
@@ -83,6 +89,7 @@ export default function BottleFormComponent({ onSubmit, onClose, initialValues, 
              {commonQuantities.map((qty) => (
                <button
                  key={qty}
+                 type="button"
                  onClick={() => handleQuickQuantity(qty)}
                  className={`p-3 rounded-lg transition-colors ${
                    selectedQuantity === qty.toString() 
@@ -114,6 +121,7 @@ export default function BottleFormComponent({ onSubmit, onClose, initialValues, 
              {commonTypes.map((type) => (
                <button
                  key={type}
+                 type="button"
                  onClick={() => handleQuickType(type)}
                  className={`flex items-center gap-2 p-3 rounded-lg transition-colors ${
                    selectedType === type 
@@ -138,22 +146,6 @@ export default function BottleFormComponent({ onSubmit, onClose, initialValues, 
             placeholder="Commentaire..."
           />
         </div>
-        {/* Submit Buttons */}
-        <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-200 py-2 rounded-lg"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={handleFormSubmit}
-              className="flex-1 bg-pink-500 text-white py-2 rounded-lg"
-            >
-              Enregistrer
-            </button>
-          </div>
-      </div>
-    </div>
+     </FormWrapper>
   );
 }
