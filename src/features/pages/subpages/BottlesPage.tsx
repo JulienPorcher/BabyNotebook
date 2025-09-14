@@ -14,17 +14,17 @@ export default function BottlePage({ babyId }: BottlePageProps) {
 
   async function fetchBottles() {
     const { data, error } = await supabase
-      .from("bottle")
+      .from("bottles")
       .select("*")
       .eq("baby_id", babyId)
-      .order("date", { ascending: false })
+      .order("date_time", { ascending: false })
       .limit(10);
 
     if (!error) setData(data);
   }
 
   async function addBottle(values: any) {
-    const { error } = await supabase.from("bottle").insert([{ ...values, baby_id: babyId }]);
+    const { error } = await supabase.from("bottles").insert([{ ...values, baby_id: babyId }]);
     if (!error) fetchBottles();
   }
 

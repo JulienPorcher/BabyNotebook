@@ -29,7 +29,7 @@ export default function HomePage() {
       bath: 'baths',
       weight: 'weights',
       measure: 'measures',
-      breast: 'breastfeeding',
+      breast: 'breast_feeding',
       baby: 'babies'
     };
     return tableMap[page];
@@ -46,12 +46,16 @@ export default function HomePage() {
         ? { ...formData, owner_id: user.id }
         : { ...formData, baby_id: currentBabyId, user_id: user.id };
 
+      console.log("Submitting to table:", tableName);
+      console.log("Data being inserted:", insertData);
+
       const { error } = await supabase
         .from(tableName)
         .insert([insertData]);
 
       if (error) {
         console.error("Error adding entry:", error);
+        alert(`Erreur lors de l'ajout: ${error.message}`);
       } else {
         console.log("Entry added successfully");
         // If it's a baby creation, refresh the baby list
@@ -62,6 +66,7 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error("Error:", error);
+      alert(`Erreur: ${error}`);
     }
   };
 

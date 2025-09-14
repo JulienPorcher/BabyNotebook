@@ -3,28 +3,28 @@ import { getRoundedDateTime, useFormSubmission } from "../formHelpers";
 import FormWrapper from "./FormWrapper";
 
 interface BreastFormProps {
-  onSubmit: (data: { leftTime: number; rightTime: number; totalTime: number; comment: string; date_time: string }) => void | Promise<void>;
+  onSubmit: (data: { left_time: number; right_time: number; total_time: number; comment: string; date_time: string }) => void | Promise<void>;
   onClose: () => void;
 }
 
 export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
-  const [leftTime, setLeftTime] = useState(0);
-  const [rightTime, setRightTime] = useState(0);
+  const [left_time, setLeftTime] = useState(0);
+  const [right_time, setRightTime] = useState(0);
   const [isLeftActive, setIsLeftActive] = useState(false);
   const [isRightActive, setIsRightActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [comment, setComment] = useState("");
   const [showTimeSettings, setShowTimeSettings] = useState(false);
-  const [customLeftTime, setCustomLeftTime] = useState(0);
-  const [customRightTime, setCustomRightTime] = useState(0);
+  const [customLeftTime, setCustomLeftTime] = useState("");
+  const [customRightTime, setCustomRightTime] = useState("");
   const [dateTime, setDateTime] = useState(getRoundedDateTime());
 
   const { error, isSubmitting, handleSubmit } = useFormSubmission({ 
-    onSubmit: (data: Record<string, any>) => onSubmit(data as { leftTime: number; rightTime: number; totalTime: number; comment: string; date_time: string }),
+    onSubmit: (data: Record<string, any>) => onSubmit(data as { left_time: number; right_time: number; total_time: number; comment: string; date_time: string }),
     onClose 
   });
 
-  const totalTime = leftTime + rightTime;
+  const total_time = left_time + right_time;
 
   // Timer effect
   useEffect(() => {
@@ -73,6 +73,14 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
   };
 
   const handleReset = () => {
+    // Show warning if there are existing times
+    if (left_time > 0 || right_time > 0) {
+      const confirmed = window.confirm(
+        "Êtes-vous sûr de vouloir réinitialiser les temps ? Cette action effacera les temps actuels."
+      );
+      if (!confirmed) return;
+    }
+    
     setLeftTime(0);
     setRightTime(0);
     setIsLeftActive(false);
@@ -81,18 +89,27 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
   };
 
   const handleSetTime = () => {
-    setLeftTime(customLeftTime);
-    setRightTime(customRightTime);
+    // Show warning if there are existing times
+    if (left_time > 0 || right_time > 0) {
+      const confirmed = window.confirm(
+        "Êtes-vous sûr de vouloir définir de nouveaux temps ? Cette action remplacera les temps actuels."
+      );
+      if (!confirmed) return;
+    }
+    
+    // Convert minutes to seconds, default to 0 if empty
+    setLeftTime((customLeftTime ? Number(customLeftTime) : 0) * 60);
+    setRightTime((customRightTime ? Number(customRightTime) : 0) * 60);
     setShowTimeSettings(false);
   };
 
   const handleFormSubmit = async () => {
     const submitData = {
-      leftTime,
-      rightTime,
-      totalTime,
-      comment,
-      date_time: dateTime
+      date_time: dateTime,
+      left_time,
+      right_time,
+      total_time,
+      comment
     };
     await handleSubmit(submitData);
   };
@@ -129,7 +146,7 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
             }`}
           >
             Gauche
-          <div className="text-2xl font-mono mb-2">{formatTime(leftTime)}</div>
+          <div className="text-2xl font-mono mb-2">{formatTime(left_time)}</div>
           </button>
         </div>
 
@@ -143,7 +160,7 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
             }`}
           >  
           Droite
-          <div className="text-2xl font-mono mb-2">{formatTime(rightTime)}</div>
+          <div className="text-2xl font-mono mb-2">{formatTime(right_time)}</div>
           </button>
         </div>
       </div>
@@ -151,11 +168,11 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
       {/* Total au centre */}
       <div className="mt-4 text-center">
         <div className="text-sm text-gray-600">Total</div>
-        <div className="text-3xl font-mono font-semibold">{formatTime(totalTime)}</div>
+        <div className="text-3xl font-mono font-semibold">{formatTime(total_time)}</div>
       </div>
 
       {/* Control Buttons */}
-      {totalTime > 0 && (
+      {total_time > 0 && (
         <div className="flex gap-2">
           <button
             type="button"
@@ -194,8 +211,9 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
                 <input
                   type="number"
                   value={customLeftTime}
-                  onChange={(e) => setCustomLeftTime(Number(e.target.value))}
+                  onChange={(e) => setCustomLeftTime(e.target.value)}
                   className="w-full border rounded-lg p-2"
+                  placeholder="0"
                 />
               </div>
               <div>
@@ -203,8 +221,9 @@ export default function BreastForm({ onSubmit, onClose }: BreastFormProps) {
                 <input
                   type="number"
                   value={customRightTime}
-                  onChange={(e) => setCustomRightTime(Number(e.target.value))}
+                  onChange={(e) => setCustomRightTime(e.target.value)}
                   className="w-full border rounded-lg p-2"
+                  placeholder="0"
                 />
               </div>
             </div>

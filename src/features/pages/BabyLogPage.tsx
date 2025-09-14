@@ -24,7 +24,7 @@ const logTypeConfig = {
   },
   breast: {
     title: "Allaitement",
-    table: "breastFeeding",
+    table: "breast_feeding",
     quantityType: null! as number,
   },
   diaper: {
