@@ -28,6 +28,11 @@ export default function MealFormComponent({ onSubmit, onClose, babyId }: MealFor
 
   const { error, isSubmitting, handleSubmit } = useFormSubmission({ onSubmit, onClose });
 
+  // Calculate total quantity
+  const totalQuantity = Object.values(manualQuantity).reduce((total, value) => {
+    return total + (parseInt(value) || 0);
+  }, 0);
+
   const handleManualQuantity = (id: string, value: string) => {
     setManualQuantity((prev) => ({
       ...prev,
@@ -59,6 +64,7 @@ export default function MealFormComponent({ onSubmit, onClose, babyId }: MealFor
       meat_proteins: parseInt(manualQuantity.meat_proteins) || 0,
       dairy_products: parseInt(manualQuantity.dairy_products) || 0,
       other: parseInt(manualQuantity.other) || 0,
+      total_quantity: totalQuantity,
       comment: comment
     };
     
@@ -123,6 +129,17 @@ export default function MealFormComponent({ onSubmit, onClose, babyId }: MealFor
           </div>
         ))}
       </div>
+
+      {/* Total Quantity Display */}
+      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-gray-700">Quantité totale</span>
+          <span className="text-lg font-semibold text-gray-900">
+            {totalQuantity} gr
+          </span>
+        </div>
+      </div>
+
       {/* Additional meal-specific actions */}
       <div className="mt-4 flex gap-2">
         <input

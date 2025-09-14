@@ -15,7 +15,7 @@ export default function DiapersPage({ babyId }: DiapersPageProps) {
       .from("diapers")
       .select("*")
       .eq("baby_id", babyId)
-      .order("date", { ascending: false })
+      .order("date_time", { ascending: false })
       .limit(10);
 
     if (!error) setData(data);

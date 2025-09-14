@@ -107,11 +107,11 @@ async function acceptShare(req: Request, userId: string) {
 
       const { data: baby } = await supabase
         .from("babies")
-        .select("id, user_id, name")
+        .select("id, owner_id, name")
         .eq("id", payload.baby_id)
         .single();
 
-      if (!baby || baby.user_id !== payload.owner_id) {
+      if (!baby || baby.owner_id !== payload.owner_id) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403 });
       }
 

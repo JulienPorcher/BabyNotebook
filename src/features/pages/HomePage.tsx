@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
 import BabySelector from "../components/BabySelector";
 import ScanQr from "../../components/ScanQr";
+import { convertToSupabaseDateTime } from "../forms/formHelpers";
 
 
 export default function HomePage() {
@@ -29,7 +30,7 @@ export default function HomePage() {
       bath: 'baths',
       weight: 'weights',
       measure: 'measures',
-      breast: 'breastfeeding',
+      breast: 'breast_feeding',
       baby: 'babies'
     };
     return tableMap[page];
@@ -41,10 +42,19 @@ export default function HomePage() {
     try {
       const tableName = getTableName(currentFormPage);
       
+      // Convert datetime fields to proper format for Supabase
+      const processedFormData = { ...formData };
+      if (processedFormData.date_time) {
+        processedFormData.date_time = convertToSupabaseDateTime(processedFormData.date_time);
+      }
+
       // For baby creation, add user_id and don't add baby_id (it's the baby being created)
       const insertData = currentFormPage === 'baby' 
-        ? { ...formData, owner_id: user.id }
-        : { ...formData, baby_id: currentBabyId, user_id: user.id };
+        ? { ...processedFormData, owner_id: user.id }
+        : { ...processedFormData, baby_id: currentBabyId, user_id: user.id };
+
+      console.log("Submitting to table:", tableName);
+      console.log("Data being inserted:", insertData);
 
       const { error } = await supabase
         .from(tableName)
@@ -52,6 +62,7 @@ export default function HomePage() {
 
       if (error) {
         console.error("Error adding entry:", error);
+        alert(`Erreur lors de l'ajout: ${error.message}`);
       } else {
         console.log("Entry added successfully");
         // If it's a baby creation, refresh the baby list
@@ -62,6 +73,7 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error("Error:", error);
+      alert(`Erreur: ${error}`);
     }
   };
 
