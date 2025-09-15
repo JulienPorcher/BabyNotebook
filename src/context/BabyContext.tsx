@@ -13,16 +13,27 @@ type Baby = {
   nickname: string;
 };
 
+type CachedBabyData = {
+  babies: Baby[];
+  lastUpdated: number;
+  userId: string;
+};
+
 type BabyContextType = {
   currentBabyId: string | null;
   currentBaby: Baby | null;
   babies: Baby[];
   loading: boolean;
   setCurrentBabyId: (id: string | null) => void;
-  refreshBabies: () => Promise<void>;
+  refreshBabies: (force?: boolean) => Promise<void>;
+  clearCache: () => void;
 };
 
 const BabyContext = createContext<BabyContextType | undefined>(undefined);
+
+// Cache configuration
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_KEY = 'babyDataCache';
 
 export function BabyProvider({ children }: { children: React.ReactNode }) {
   const [currentBabyId, setCurrentBabyIdState] = useState<string | null>(null);
@@ -31,7 +42,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // Charger depuis localStorage au démarrage
+  // Load from localStorage on startup
   useEffect(() => {
     const saved = localStorage.getItem("currentBabyId");
     if (saved) {
@@ -39,17 +50,18 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Charger les bébés quand l'utilisateur est connecté
+  // Load babies when user is connected
   useEffect(() => {
     if (user) {
-      refreshBabies();
+      loadBabiesFromCache();
     } else {
       setBabies([]);
       setCurrentBaby(null);
+      clearCache();
     }
   }, [user]);
 
-  // Mettre à jour currentBaby quand currentBabyId change
+  // Update currentBaby when currentBabyId changes
   useEffect(() => {
     if (currentBabyId && babies.length > 0) {
       const baby = babies.find(b => b.id === currentBabyId);
@@ -59,15 +71,67 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentBabyId, babies]);
 
-  const refreshBabies = async () => {
+  // Load babies from cache
+  const loadBabiesFromCache = async () => {
+    if (!user?.id) return;
+
+    try {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const parsed: CachedBabyData = JSON.parse(cachedData);
+        
+        // Check if cache is valid (same user and not expired)
+        const isExpired = Date.now() - parsed.lastUpdated > CACHE_DURATION;
+        const isSameUser = parsed.userId === user.id;
+        
+        if (!isExpired && isSameUser && parsed.babies.length > 0) {
+          console.log('Loading babies from cache');
+          setBabies(parsed.babies);
+          return;
+        }
+      }
+      
+      // Cache is invalid or doesn't exist, fetch from server
+      await refreshBabies(true);
+    } catch (error) {
+      console.error('Error loading from cache:', error);
+      await refreshBabies(true);
+    }
+  };
+
+  // Save babies to cache
+  const saveBabiesToCache = (babiesData: Baby[]) => {
+    if (!user?.id) return;
+    
+    const cacheData: CachedBabyData = {
+      babies: babiesData,
+      lastUpdated: Date.now(),
+      userId: user.id
+    };
+    
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+  };
+
+  // Clear cache
+  const clearCache = () => {
+    localStorage.removeItem(CACHE_KEY);
+  };
+
+  const refreshBabies = async (force: boolean = false) => {
     if (!user?.id) {
       console.log('No user authenticated, skipping baby fetch');
       return;
     }
 
+    // If not forced, try to load from cache first
+    if (!force) {
+      await loadBabiesFromCache();
+      return;
+    }
+
     setLoading(true);
     try {
-      console.log('Fetching babies for user:', user.id);
+      console.log('Fetching babies from server for user:', user.id);
       const { data, error } = await supabase
         .from('view_baby_list')
         .select('*')
@@ -77,8 +141,10 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         console.error('Error fetching babies:', error);
       } else {
-        console.log('Fetched babies:', data);
-        setBabies(data || []);
+        console.log('Fetched babies from server:', data);
+        const babiesData = data || [];
+        setBabies(babiesData);
+        saveBabiesToCache(babiesData);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -87,7 +153,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Sauvegarder dans localStorage quand ça change
+  // Save to localStorage when it changes
   const setCurrentBabyId = (id: string | null) => {
     setCurrentBabyIdState(id);
     if (id) {
@@ -98,7 +164,15 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <BabyContext.Provider value={{ currentBabyId, currentBaby, babies, loading, setCurrentBabyId, refreshBabies }}>
+    <BabyContext.Provider value={{ 
+      currentBabyId, 
+      currentBaby, 
+      babies, 
+      loading, 
+      setCurrentBabyId, 
+      refreshBabies, 
+      clearCache 
+    }}>
       {children}
     </BabyContext.Provider>
   );
