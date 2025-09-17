@@ -202,25 +202,48 @@ async function acceptShare(req: Request, userId: string) {
   return new Response(JSON.stringify({ error: "Unknown type" }), { status: 400 });
 }
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+};
+
 // Router
 serve(async (req: Request) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const user = await getUser(req);
 
     const url = new URL(req.url);
+    let response: Response;
+
     if (req.method === "POST" && url.pathname.endsWith("/create-qr-share")) {
-      return await createQrShare(req, user.id);
-    }
-    if (req.method === "POST" && url.pathname.endsWith("/create-email-share")) {
-      return await createEmailShare(req, user.id);
-    }
-    if (req.method === "POST" && url.pathname.endsWith("/accept-share")) {
-      return await acceptShare(req, user.id);
+      response = await createQrShare(req, user.id);
+    } else if (req.method === "POST" && url.pathname.endsWith("/create-email-share")) {
+      response = await createEmailShare(req, user.id);
+    } else if (req.method === "POST" && url.pathname.endsWith("/accept-share")) {
+      response = await acceptShare(req, user.id);
+    } else {
+      response = new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
     }
 
-    return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+    // Add CORS headers to response
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
   } catch {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    const response = new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return response;
   }
 });
 
