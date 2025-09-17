@@ -25,7 +25,10 @@ export function useCameraPermission(): CameraPermissionHook {
     setIsRetrying(true);
     setError(null);
     
+    console.log('Requesting camera permission...');
     const result = await cameraAuthService.requestPermission();
+    console.log('Permission result:', result);
+    
     setPermission(result.permission);
     setError(result.error);
     

@@ -12,43 +12,23 @@ export default function ShareQr({ babyId }: { babyId: string }) {
     setError(null);
     
     try {
-      const session = (await supabase.auth.getSession()).data.session;
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const res = await fetch(`${supabaseUrl}/functions/v1/share/create-qr-share`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ babyId })
-      });
+      // Generate a simple UUID token for now
+      const token = crypto.randomUUID();
       
-      if (!res.ok) {
-        let errorMessage = "Erreur lors de la génération du QR code";
-        try {
-          const errorData = await res.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (jsonError) {
-          // If response is not JSON, get the text content
-          const textContent = await res.text();
-          errorMessage = textContent || errorMessage;
-        }
-        throw new Error(errorMessage);
+      // Store in database for validation
+      const { error } = await supabase
+        .from('baby_share_tokens')
+        .insert({
+          token: token,
+          baby_id: babyId,
+          owner_id: (await supabase.auth.getUser()).data.user?.id,
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes
+        });
+      
+      if (error) {
+        throw new Error(error.message || "Erreur lors de la génération du QR code");
       }
       
-      const responseText = await res.text();
-      if (!responseText) {
-        throw new Error("Réponse vide du serveur");
-      }
-      
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch (jsonError) {
-        throw new Error(`Réponse invalide du serveur: ${responseText}`);
-      }
-      
-      const { token } = responseData;
       setToken(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");

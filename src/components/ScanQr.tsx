@@ -70,6 +70,14 @@ export default function ScanQr({ onSuccess }: { onSuccess?: () => void }) {
         <p className="text-green-700">Pointez la caméra vers le QR code à scanner</p>
       </div>
       
+      {/* Manual trigger for mobile devices */}
+      <button
+        onClick={requestPermission}
+        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 text-sm"
+      >
+        🔄 Réinitialiser la caméra
+      </button>
+      
       <div className="relative">
         <Scanner
           onScan={(detectedCodes) => {
@@ -81,6 +89,9 @@ export default function ScanQr({ onSuccess }: { onSuccess?: () => void }) {
             console.error('Scanner error:', error);
             setScanError('Erreur du scanner. Veuillez réessayer.');
           }}
+          constraints={{
+            facingMode: 'environment'
+          } as MediaTrackConstraints}
         />
         
         {/* Scanner overlay with targeting frame */}
