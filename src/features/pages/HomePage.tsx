@@ -109,7 +109,7 @@ export default function HomePage() {
   };
 
   // Pull-to-refresh hook
-  const { pullDistance, containerRef, pullToRefreshIndicator, refreshingIndicator } = usePullToRefresh({
+  const { pullDistance, containerRef, bind, pullToRefreshIndicator, refreshingIndicator } = usePullToRefresh({
     onRefresh: handleGlobalRefresh,
     isRefreshing
   });
@@ -134,6 +134,7 @@ export default function HomePage() {
   return (
     <div 
       ref={containerRef}
+      {...bind()}
       className="p-4 space-y-4 overflow-y-auto"
       style={{ 
         transform: `translateY(${pullDistance}px)`,

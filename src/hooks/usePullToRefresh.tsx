@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
+import { useDrag } from '@use-gesture/react';
 
 interface UsePullToRefreshProps {
   onRefresh: () => void;
@@ -8,56 +9,42 @@ interface UsePullToRefreshProps {
 interface UsePullToRefreshReturn {
   pullDistance: number;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  bind: () => any;
   pullToRefreshIndicator: React.ReactNode;
   refreshingIndicator: React.ReactNode;
 }
 
 export function usePullToRefresh({ onRefresh, isRefreshing }: UsePullToRefreshProps): UsePullToRefreshReturn {
-  const [pullDistance, setPullDistance] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const startY = useRef(0);
-  const currentY = useRef(0);
+  const [pullDistance, setPullDistance] = useState(0);
 
-  // Pull-to-refresh functionality
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (container.scrollTop === 0) {
-        startY.current = e.touches[0].clientY;
+  const bind = useDrag(
+    ({ down, movement: [, my], first, last }) => {
+      // Only allow pull when at top of scroll
+      if (containerRef.current?.scrollTop !== 0) return;
+      
+      if (first) {
+        setPullDistance(0);
       }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (container.scrollTop === 0) {
-        currentY.current = e.touches[0].clientY;
-        const distance = Math.max(0, currentY.current - startY.current);
-        
-        if (distance > 0) {
-          e.preventDefault();
-          setPullDistance(Math.min(distance, 100));
+      
+      if (down && my > 0) {
+        // Pulling down
+        const distance = Math.min(my, 100);
+        setPullDistance(distance);
+      } else if (last) {
+        // Released
+        if (pullDistance > 50 && !isRefreshing) {
+          onRefresh();
         }
+        setPullDistance(0);
       }
-    };
-
-    const handleTouchEnd = () => {
-      if (pullDistance > 50 && !isRefreshing) {
-        onRefresh();
-      }
-      setPullDistance(0);
-    };
-
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove);
-    container.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [pullDistance, isRefreshing, onRefresh]);
+    },
+    {
+      axis: 'y',
+      filterTaps: true,
+      bounds: { top: 0 }
+    }
+  );
 
   const pullToRefreshIndicator = pullDistance > 0 && (
     <div className="flex justify-center items-center py-2">
@@ -78,6 +65,7 @@ export function usePullToRefresh({ onRefresh, isRefreshing }: UsePullToRefreshPr
   return {
     pullDistance,
     containerRef,
+    bind,
     pullToRefreshIndicator,
     refreshingIndicator
   };
