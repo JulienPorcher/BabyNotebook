@@ -12,9 +12,10 @@ interface RecentData {
 interface RecentInfoSectionProps {
   currentBabyId: string | null;
   onDataRefresh?: () => void;
+  onBabyChange?: () => void;
 }
 
-export default function RecentInfoSection({ currentBabyId, onDataRefresh }: RecentInfoSectionProps) {
+export default function RecentInfoSection({ currentBabyId, onDataRefresh, onBabyChange }: RecentInfoSectionProps) {
   const [recentData, setRecentData] = useState<RecentData>({
     lastMeal: null,
     lastDiaper: null,
@@ -103,12 +104,25 @@ export default function RecentInfoSection({ currentBabyId, onDataRefresh }: Rece
     }
   };
 
-  // Fetch recent data when baby changes
+  // Fetch recent data when baby changes or clear when no baby
   useEffect(() => {
     if (currentBabyId) {
       fetchRecentData();
+    } else {
+      // Clear data when no baby is selected
+      setRecentData({
+        lastMeal: null,
+        lastDiaper: null,
+        lastBath: null,
+        lastPump: null
+      });
     }
-  }, [currentBabyId]);
+    
+    // Notify parent that baby changed (for cache clearing)
+    if (onBabyChange) {
+      onBabyChange();
+    }
+  }, [currentBabyId, onBabyChange]);
 
   // Expose refresh function to parent
   useEffect(() => {

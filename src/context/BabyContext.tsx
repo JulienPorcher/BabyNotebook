@@ -68,6 +68,10 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
       setCurrentBaby(baby || null);
     } else {
       setCurrentBaby(null);
+      // Clear cache when no baby is selected
+      if (!currentBabyId) {
+        clearCache();
+      }
     }
   }, [currentBabyId, babies]);
 
