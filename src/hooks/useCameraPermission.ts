@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { cameraAuthService, CameraPermissionState, CameraPermissionResult } from '../services/cameraAuthService';
+import { cameraAuthService, type CameraPermissionState} from '../services/cameraAuthService';
 
 export interface CameraPermissionHook {
   permission: CameraPermissionState;
