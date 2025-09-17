@@ -19,7 +19,8 @@ export default function ShareEmail({ babyId }: { babyId: string }) {
 
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      const res = await fetch("/functions/v1/share/create-email-share", {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const res = await fetch(`${supabaseUrl}/functions/v1/share/create-email-share`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
