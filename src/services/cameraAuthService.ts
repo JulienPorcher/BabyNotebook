@@ -12,7 +12,7 @@ export interface CameraAuthService {
 }
 
 class CameraAuthServiceImpl implements CameraAuthService {
-  private isSupported(): boolean {
+  isSupported(): boolean {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }
 
@@ -128,13 +128,8 @@ class CameraAuthServiceImpl implements CameraAuthService {
     }
   }
 
-  isSupported(): boolean {
-    return this.isSupported();
-  }
 }
 
 // Export singleton instance
 export const cameraAuthService = new CameraAuthServiceImpl();
 
-// Export types for convenience
-export type { CameraPermissionState, CameraPermissionResult };
