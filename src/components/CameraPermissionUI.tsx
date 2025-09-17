@@ -105,9 +105,20 @@ export function CameraPermissionPrompt({
       </p>
       
       <button
-        onClick={() => {
+        onClick={async () => {
           console.log('Button clicked - requesting permission');
-          onRequestPermission();
+          try {
+            // Try direct camera access first
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+              video: { facingMode: 'environment' } 
+            });
+            console.log('Direct camera access successful');
+            stream.getTracks().forEach(track => track.stop());
+            onRequestPermission();
+          } catch (err) {
+            console.log('Direct camera access failed:', err);
+            onRequestPermission();
+          }
         }}
         disabled={isRetrying}
         className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"

@@ -156,6 +156,10 @@ export default function HomePage() {
       {/* Recent Info Section */}
       <RecentInfoSection 
         currentBabyId={currentBabyId}
+        onBabyChange={() => {
+          // Clear cache when baby changes
+          clearCache();
+        }}
       />
 
       {/* Action Buttons Section */}

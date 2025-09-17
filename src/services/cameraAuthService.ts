@@ -55,13 +55,18 @@ class CameraAuthServiceImpl implements CameraAuthService {
 
   async requestPermission(): Promise<CameraPermissionResult> {
     try {
+      console.log('CameraAuthService: Requesting permission...');
+      
       if (!this.isSupported()) {
+        console.log('CameraAuthService: Camera not supported');
         return {
           permission: 'unsupported',
           error: 'Votre appareil ou navigateur ne supporte pas l\'accès à la caméra.'
         };
       }
 
+      console.log('CameraAuthService: Camera is supported, requesting access...');
+      
       // Try to access camera to trigger permission prompt
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -71,12 +76,14 @@ class CameraAuthServiceImpl implements CameraAuthService {
         } 
       });
       
+      console.log('CameraAuthService: Camera access granted');
+      
       // Stop the stream immediately as we just wanted to check permission
       stream.getTracks().forEach(track => track.stop());
       
       return { permission: 'granted', error: null };
     } catch (err: any) {
-      console.error('Camera access error:', err);
+      console.error('CameraAuthService: Camera access error:', err);
       
       const errorMessage = this.getErrorMessage(err);
       const permission = this.getPermissionFromError(err);
