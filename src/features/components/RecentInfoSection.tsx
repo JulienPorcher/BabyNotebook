@@ -32,7 +32,7 @@ export default function RecentInfoSection({ currentBabyId, onDataRefresh, onBaby
         .from('view_home_last_news')
         .select('*')
         .eq('baby_id', currentBabyId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching recent data:', error);
@@ -41,6 +41,18 @@ export default function RecentInfoSection({ currentBabyId, onDataRefresh, onBaby
 
       // Debug: Log the data from the view
       console.log('Recent data from view:', data);
+      
+      // If no data exists for this baby, set all to null
+      if (!data) {
+        setRecentData({
+          lastMeal: null,
+          lastDiaper: null,
+          lastBath: null,
+          lastPump: null
+        });
+        return;
+      }
+
       console.log('Diaper data:', {
         last_diaper: data.last_diaper,
         last_diaper_at: data.last_diaper_at,
@@ -124,12 +136,12 @@ export default function RecentInfoSection({ currentBabyId, onDataRefresh, onBaby
     }
   }, [currentBabyId, onBabyChange]);
 
-  // Expose refresh function to parent
+  // Expose refresh function to parent - this should be called when data is successfully fetched
   useEffect(() => {
-    if (onDataRefresh) {
+    if (onDataRefresh && currentBabyId) {
       onDataRefresh();
     }
-  }, [recentData]);
+  }, [currentBabyId, onDataRefresh]);
 
   return (
     <div className="bg-white rounded-2xl shadow p-4">
