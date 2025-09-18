@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { JSX } from "react";
 import { Utensils, Heart, HeartPlus, Milk } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
 import UnifiedForm from "../forms/UnifiedForm";
+import ScrollableStatsPanel from "../components/ScrollableStatsPanel";
 
 const logTypeConfig = {
   meal: {
@@ -41,13 +42,6 @@ const logTypeConfig = {
 
 type LogType = keyof typeof logTypeConfig;
 
-type LogEntry<T extends LogType> = {
-  id: string;
-  date: string;
-  type: T;
-  quantity: typeof logTypeConfig[T]["quantityType"];
-  comment?: string;
-};
 
 type BabyLogPageProps = {
   page: 'meal' | 'diaper' | 'bath';
@@ -58,8 +52,6 @@ type BabyLogPageProps = {
 export default function BabyLogPage({ page }: BabyLogPageProps) {
   const { currentBabyId } = useBaby();
   const { user } = useAuth();
-  const [logs, setLogs] = useState<LogEntry<typeof page>[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | "breast" | "meal" | null>(null);
 
@@ -68,29 +60,6 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
 
   // Table cible
   const table = logTypeConfig[effectivePage].table;
-
-  useEffect(() => {
-    async function fetchLogs() {
-      if (!user?.id) return;
-      
-      setLoading(true);
-      const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .eq("baby_id", currentBabyId)
-        .eq("user_id", user.id)
-        .order("date", { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error(error);
-      } else {
-        setLogs(data as LogEntry<typeof page>[]);
-      }
-      setLoading(false);
-    }
-    fetchLogs();
-  }, [currentBabyId, page, user?.id]);
 
   async function handleFormSubmit(formData: Record<string, any>) {
     if (!currentBabyId || !user?.id) return;
@@ -103,18 +72,8 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
       if (error) {
         console.error("Error adding log:", error);
       } else {
-        // Refresh the logs list
-        const { data, error: fetchError } = await supabase
-          .from(table)
-          .select("*")
-          .eq("baby_id", currentBabyId)
-          .eq("user_id", user.id)
-          .order("date", { ascending: false })
-          .limit(10);
-
-        if (!fetchError) {
-          setLogs(data as LogEntry<typeof page>[]);
-        }
+        // Trigger refresh of ScrollableStatsPanel
+        window.dispatchEvent(new CustomEvent('refreshStatsPanel'));
       }
     } catch (error) {
       console.error("Error:", error);
@@ -160,40 +119,8 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
         )}
       </div>
 
-      {/* Stats (placeholder ici, mais calculées en DB) */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="p-2 bg-gray-100 rounded text-center">Stat 1</div>
-        <div className="p-2 bg-gray-100 rounded text-center">Stat 2</div>
-        <div className="p-2 bg-gray-100 rounded text-center">Stat 3</div>
-      </div>
-
-      {/* Tableau des logs */}
-      {loading ? (
-        <p>Chargement...</p>
-      ) : (
-        <table className="w-full border">
-          <thead>
-            <tr>
-              <th className="border px-2 py-1">Date</th>
-              <th className="border px-2 py-1">Type</th>
-              <th className="border px-2 py-1">Quantité</th>
-              <th className="border px-2 py-1">Commentaire</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr key={log.id}>
-                <td className="border px-2 py-1">
-                  {new Date(log.date).toLocaleString()}
-                </td>
-                <td className="border px-2 py-1">{log.type}</td>
-                <td className="border px-2 py-1">{log.quantity ?? "-"}</td>
-                <td className="border px-2 py-1">{log.comment}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {/* Stats et Tableau des logs - ScrollableStatsPanel */}
+      <ScrollableStatsPanel />
 
       {/* Boutons supplémentaires */}
       <div className="flex gap-2 mt-4">

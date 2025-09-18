@@ -16,24 +16,82 @@ export default function ScanQr({ onSuccess }: { onSuccess?: () => void }) {
     setScanError("");
 
     try {
-      const session = (await supabase.auth.getSession()).data.session;
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const res = await fetch(`${supabaseUrl}/functions/v1/share/accept-share`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ token: data, type: "qr" })
-      });
+      // Look up the token in the database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('baby_share_tokens')
+        .select('baby_id, owner_id, expires_at')
+        .eq('token', data)
+        .eq('used', false)
+        .single();
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Erreur lors de l'acceptation du partage");
+      if (tokenError || !tokenData) {
+        throw new Error("QR code invalide ou expiré");
       }
 
-      const result = await res.json();
-      setStatus(result.message || "Carnet partagé avec succès !");
+      // Check if token is expired (UTC times)
+      const now = new Date();
+      // Parse expires_at as UTC explicitly
+      const expiresAt = new Date(tokenData.expires_at + 'Z');
+      
+      console.log('Token expiration check:');
+      console.log('Current time (UTC):', now.toISOString());
+      console.log('Expires at (UTC):', expiresAt.toISOString());
+      console.log('Time difference (minutes):', (expiresAt.getTime() - now.getTime()) / (1000 * 60));
+      
+      // Add a small buffer (30 seconds) to account for any timing differences
+      const bufferMs = 30 * 1000; // 30 seconds
+      if (expiresAt.getTime() <= (now.getTime() + bufferMs)) {
+        throw new Error("QR code expiré");
+      }
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Utilisateur non connecté");
+      }
+
+      // Check if user is already sharing this baby
+      const { data: existingShare } = await supabase
+        .from('baby_shares')
+        .select('id')
+        .eq('baby_id', tokenData.baby_id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingShare) {
+        setStatus("Carnet déjà partagé avec vous !");
+        return;
+      }
+
+      // Get baby name
+      const { data: baby } = await supabase
+        .from('babies')
+        .select('name')
+        .eq('id', tokenData.baby_id)
+        .single();
+
+      // Create baby_shares entry
+      const { error: shareError } = await supabase
+        .from('baby_shares')
+        .insert({
+          baby_id: tokenData.baby_id,
+          user_id: user.id,
+          role: 'invited',
+          nickname: baby?.name || 'Baby'
+        });
+
+      if (shareError) {
+        console.error('Share error:', shareError);
+        throw new Error(`Erreur lors de l'ajout du partage: ${shareError.message}`);
+      }
+
+      // Mark token as used
+      await supabase
+        .from('baby_share_tokens')
+        .update({ used: true })
+        .eq('token', data);
+
+      setStatus("Carnet partagé avec succès !");
       
       // Call onSuccess callback if provided
       if (onSuccess) {
