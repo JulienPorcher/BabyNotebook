@@ -9,6 +9,7 @@ import RecentInfoSection from "../components/RecentInfoSection";
 import ActionButtonsSection from "../components/ActionButtonsSection";
 import BabyManagementSection from "../components/BabyManagementSection";
 import ScanQr from "../../components/ScanQr";
+import TimelineRibbon from "../../components/TimelineRibbon";
 import { convertToSupabaseDateTime } from "../forms/formHelpers";
 import { usePullToRefresh } from "../../hooks/usePullToRefresh";
 
@@ -23,7 +24,7 @@ export default function HomePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Map form pages to their corresponding database tables
-  const getTableName = (page: FormPage): string => {
+  const getTableNameForForm = (page: FormPage): string => {
     const tableMap: Record<FormPage, string> = {
       meal: 'meals',
       bottle: 'bottles',
@@ -43,7 +44,7 @@ export default function HomePage() {
     if (!currentFormPage || !user?.id) return;
 
     try {
-      const tableName = getTableName(currentFormPage);
+      const tableName = getTableNameForForm(currentFormPage);
       
       // Convert datetime fields to proper format for Supabase
       const processedFormData = { ...formData };
@@ -161,6 +162,11 @@ export default function HomePage() {
           clearCache();
         }}
       />
+
+      {/* Timeline Ribbon */}
+      {currentBabyId && (
+        <TimelineRibbon babyId={currentBabyId} />
+      )}
 
       {/* Action Buttons Section */}
       <ActionButtonsSection 
