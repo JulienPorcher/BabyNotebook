@@ -1,50 +1,14 @@
 import { useState } from "react";
-import type { JSX } from "react";
-import { Utensils, Heart, HeartPlus, Milk } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
 import UnifiedForm from "../forms/UnifiedForm";
 import ScrollableStatsPanel from "../components/ScrollableStatsPanel";
-
-const logTypeConfig = {
-  meal: {
-    title: "Biberon",
-    table: "meals",
-    quantityType: null! as number,
-  },
-  bottle: {
-    title: "Biberon",
-    table: "bottles",
-    quantityType: null! as number,
-  },
-  pump: {
-    title: "Expression",
-    table: "pumps",
-    quantityType: null! as number,
-  },
-  breast: {
-    title: "Allaitement",
-    table: "breast_feeding",
-    quantityType: null! as number,
-  },
-  diaper: {
-    title: "Couche",
-    table: "diapers",
-    quantityType: null! as string,
-  },
-  bath: {
-    title: "Bain",
-    table: "baths",
-    quantityType: null! as void,
-  },
-} as const;
-
-type LogType = keyof typeof logTypeConfig;
+import { getTableName, getActivityConfig, type ActivityType } from "../../lib/activityConfig";
 
 
 type BabyLogPageProps = {
-  page: 'meal' | 'diaper' | 'bath';
+  page: 'meal' | 'hygiene' | 'health';
 };
 
 
@@ -53,16 +17,16 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   const { currentBabyId } = useBaby();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
-  const [selectedFormPage, setSelectedFormPage] = useState<"bottle" | "pump" | "breast" | "meal" | null>(null);
+  const [selectedFormPage, setSelectedFormPage] = useState<ActivityType | null>(null);
 
-  // Page effective (si un sous-formulaire repas est sélectionné)
-  const effectivePage: LogType = (selectedFormPage ?? page) as LogType;
+  // Page effective (si un sous-formulaire est sélectionné)
+  const effectivePage: ActivityType | null = selectedFormPage;
 
-  // Table cible
-  const table = logTypeConfig[effectivePage].table;
+  // Table cible - seulement si on a un formulaire sélectionné
+  const table = effectivePage ? getTableName(effectivePage) : null;
 
   async function handleFormSubmit(formData: Record<string, any>) {
-    if (!currentBabyId || !user?.id) return;
+    if (!currentBabyId || !user?.id || !table) return;
 
     try {
       const { error } = await supabase
@@ -87,40 +51,49 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
         {page === "meal" ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
             <SquareButton
-              icon={<Milk />}
-              label="Biberon"
+              activityType="bottle"
               onClick={() => { setSelectedFormPage("bottle"); setShowForm(true); }}
             />
             <SquareButton
-              icon={<Utensils />}
-              label="Solide"
+              activityType="meal"
               onClick={() => { setSelectedFormPage("meal"); setShowForm(true); }}
             />
             <SquareButton
-              icon={<Heart />}
-              label="Allaitement"
+              activityType="breast"
               onClick={() => { setSelectedFormPage("breast"); setShowForm(true); }}
             />
             <SquareButton
-              icon={<HeartPlus />}
-              label="Expression"
+              activityType="pump"
               onClick={() => { setSelectedFormPage("pump"); setShowForm(true); }}
             />
           </div>
-        ) : (
-          <div className="w-full">
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Ajouter
-            </button>
+        ) : page === "hygiene" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
+            <SquareButton
+              activityType="diaper"
+              onClick={() => { setSelectedFormPage("diaper"); setShowForm(true); }}
+            />
+            <SquareButton
+              activityType="bath"
+              onClick={() => { setSelectedFormPage("bath"); setShowForm(true); }}
+            />
           </div>
-        )}
+        ) : page === "health" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
+            <SquareButton
+              activityType="weight"
+              onClick={() => { setSelectedFormPage("weight"); setShowForm(true); }}
+            />
+            <SquareButton
+              activityType="measure"
+              onClick={() => { setSelectedFormPage("measure"); setShowForm(true); }}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Stats et Tableau des logs - ScrollableStatsPanel */}
-      <ScrollableStatsPanel />
+      <ScrollableStatsPanel tab={page} />
 
       {/* Boutons supplémentaires */}
       <div className="flex gap-2 mt-4">
@@ -128,12 +101,12 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
           Modifier
         </button>
         <button className="bg-green-500 text-white px-4 py-2 rounded">
-          Commander {page === "meal" ? "des repas" : "des couches"}
+          Commander {page === "meal" ? "des repas" : page === "hygiene" ? "des couches" : "du matériel"}
         </button>
       </div>
 
       {/* Form Modal */}
-      {showForm && (
+      {showForm && effectivePage && (
         <UnifiedForm
           page={effectivePage}
           onSubmit={handleFormSubmit}
@@ -145,14 +118,17 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   );
 }
 
-function SquareButton({ icon, label, onClick }: { icon: JSX.Element; label: string; onClick: () => void }) {
+function SquareButton({ activityType, onClick }: { activityType: ActivityType; onClick: () => void }) {
+  const config = getActivityConfig(activityType);
+  const IconComponent = config.icon;
+  
   return (
     <button
       onClick={onClick}
       className="flex flex-col items-center justify-center w-full bg-gray-100 rounded-xl p-4 hover:bg-gray-200"
     >
-      {icon}
-      <span className="text-xs mt-1">{label}</span>
+      <IconComponent className="w-6 h-6" />
+      <span className="text-xs mt-1">{config.title}</span>
     </button>
   );
 }

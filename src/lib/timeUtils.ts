@@ -45,21 +45,21 @@ export function calculateDurationSince(date: string | Date | null): {
   let formatted = '';
   
   if (days > 0) {
-    formatted += `${days} jour${days > 1 ? 's' : ''}`;
+    formatted += `${days} J`;
     if (hours > 0 || minutes > 0) {
       formatted += ', ';
     }
   }
   
   if (hours > 0) {
-    formatted += `${hours} heure${hours > 1 ? 's' : ''}`;
+    formatted += `${hours} h`;
     if (minutes > 0) {
-      formatted += ' et ';
+      formatted += ', ';
     }
   }
   
   if (minutes > 0 || (days === 0 && hours === 0)) {
-    formatted += `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    formatted += `${minutes} min`;
   }
 
   // Handle future dates
@@ -70,19 +70,19 @@ export function calculateDurationSince(date: string | Date | null): {
     
     let futureFormatted = 'Dans ';
     if (futureDays > 0) {
-      futureFormatted += `${futureDays} jour${futureDays > 1 ? 's' : ''}`;
+      futureFormatted += `${futureDays} j${futureDays > 1 ? 's' : ''}`;
       if (futureHours > 0 || futureMinutes > 0) {
         futureFormatted += ', ';
       }
     }
     if (futureHours > 0) {
-      futureFormatted += `${futureHours} heure${futureHours > 1 ? 's' : ''}`;
+      futureFormatted += `${futureHours} h${futureHours > 1 ? 's' : ''}`;
       if (futureMinutes > 0) {
         futureFormatted += ' et ';
       }
     }
     if (futureMinutes > 0 || (futureDays === 0 && futureHours === 0)) {
-      futureFormatted += `${futureMinutes} minute${futureMinutes > 1 ? 's' : ''}`;
+      futureFormatted += `${futureMinutes} min${futureMinutes > 1 ? 's' : ''}`;
     }
     
     return {
@@ -124,14 +124,14 @@ export function getRelativeTimeString(date: string | Date | null): string {
   }
   
   if (duration.totalMinutes < 60) {
-    return `Il y a ${duration.minutes} minute${duration.minutes > 1 ? 's' : ''}`;
+    return `${duration.minutes} min${duration.minutes > 1 ? 's' : ''}`;
   }
   
   if (duration.totalMinutes < 1440) { // Less than 24 hours
-    return `Il y a ${duration.formatted}`;
+    return `${duration.formatted}`;
   }
   
-  return `Il y a ${duration.formatted}`;
+  return `${duration.formatted}`;
 }
 
 /**

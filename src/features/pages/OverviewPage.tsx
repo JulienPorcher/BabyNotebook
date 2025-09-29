@@ -2,7 +2,7 @@ import { useState } from "react";
 import BabyLogPage from "./BabyLogPage";
 
 export default function OverviewPage() {
-  const [activeTab, setActiveTab] = useState<"meals" | "diapers" | "baths">("meals");
+  const [activeTab, setActiveTab] = useState<"meals" | "hygiene" | "health">("meals");
 
 
   return (
@@ -20,27 +20,27 @@ export default function OverviewPage() {
         </button>
         <button
           className={`flex-1 px-4 py-2 rounded-t-lg ${
-            activeTab === "diapers" ? "bg-yellow-500 text-white" : "bg-gray-200"
+            activeTab === "hygiene" ? "bg-yellow-500 text-white" : "bg-gray-200"
           }`}
-          onClick={() => setActiveTab("diapers")}
+          onClick={() => setActiveTab("hygiene")}
         >
-          Couches
+          Hygiène
         </button>
         <button
           className={`flex-1 px-4 py-2 rounded-t-lg ${
-            activeTab === "baths" ? "bg-blue-500 text-white" : "bg-gray-200"
+            activeTab === "health" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
-          onClick={() => setActiveTab("baths")}
+          onClick={() => setActiveTab("health")}
         >
-          Bains
+          Santé
         </button>
       </div>
 
       {/* Contenu du sous-onglet */}
       <div className="bg-white rounded-2xl shadow p-4">
         {activeTab === "meals" && <BabyLogPage page="meal"/>}
-        {activeTab === "diapers" && <BabyLogPage page="diaper" />}
-        {activeTab === "baths" && <BabyLogPage page="bath" />}
+        {activeTab === "hygiene" && <BabyLogPage page="hygiene" />}
+        {activeTab === "health" && <BabyLogPage page="health" />}
       </div>
       {/* Bouton partenaire */}
         <div className="mt-4 bg-yellow-100 p-3 rounded-xl">

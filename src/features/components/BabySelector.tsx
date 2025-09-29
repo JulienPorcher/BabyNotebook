@@ -50,9 +50,6 @@ export default function BabySelector({ babies, currentBabyId, onSelectBaby, load
 
   return (
     <div className="bg-white rounded-2xl shadow p-4">
-      <h2 className="text-lg font-semibold mb-3">
-        {currentBabyId ? `Carnet de ${babies.find(b => b.id === currentBabyId)?.name || 'Bébé'}` : 'Sélectionner un carnet'}
-      </h2>
       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
         {babies.map((baby) => (
           <button
