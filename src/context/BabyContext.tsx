@@ -13,8 +13,122 @@ type Baby = {
   nickname: string;
 };
 
+// Data types for each activity
+type Bottle = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date_time: string;
+  quantity: number;
+  comment?: string;
+  created_at: string;
+};
+
+type Meal = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date_time: string;
+  quantity: number;
+  comment?: string;
+  created_at: string;
+};
+
+type Breast = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date_time: string;
+  duration: number;
+  side: string;
+  comment?: string;
+  created_at: string;
+};
+
+type Pump = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date_time: string;
+  quantity: number;
+  comment?: string;
+  created_at: string;
+};
+
+type Diaper = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date_time: string;
+  type: string;
+  comment?: string;
+  created_at: string;
+};
+
+type Bath = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date: string;
+  comment?: string;
+  created_at: string;
+};
+
+type Weight = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date: string;
+  weight: number;
+  comment?: string;
+  created_at: string;
+};
+
+type Measure = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date: string;
+  height: number;
+  comment?: string;
+  created_at: string;
+};
+
+type Activity = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date_time: string;
+  activity_type: string;
+  comment?: string;
+  created_at: string;
+};
+
+type Photo = {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  path: string;
+  description?: string;
+  created_at: string;
+};
+
+export type BabyData = {
+  bottles: Bottle[];
+  meals: Meal[];
+  breast: Breast[];
+  pumps: Pump[];
+  diapers: Diaper[];
+  baths: Bath[];
+  weights: Weight[];
+  measures: Measure[];
+  activities: Activity[];
+  photos: Photo[];
+};
+
 type CachedBabyData = {
   babies: Baby[];
+  babyData: Record<string, BabyData>;
   lastUpdated: number;
   userId: string;
 };
@@ -23,10 +137,16 @@ type BabyContextType = {
   currentBabyId: string | null;
   currentBaby: Baby | null;
   babies: Baby[];
+  babyData: BabyData | null;
   loading: boolean;
   setCurrentBabyId: (id: string | null) => void;
   refreshBabies: (force?: boolean) => Promise<void>;
+  refreshBabyData: (babyId?: string, force?: boolean) => Promise<void>;
+  addData: <T extends keyof BabyData>(type: T, data: BabyData[T][0]) => Promise<void>;
+  updateData: <T extends keyof BabyData>(type: T, id: string, data: Partial<BabyData[T][0]>) => Promise<void>;
+  deleteData: <T extends keyof BabyData>(type: T, id: string) => Promise<void>;
   clearCache: () => void;
+  checkAndRefreshIfNeeded: () => Promise<void>;
 };
 
 const BabyContext = createContext<BabyContextType | undefined>(undefined);
@@ -39,6 +159,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
   const [currentBabyId, setCurrentBabyIdState] = useState<string | null>(null);
   const [currentBaby, setCurrentBaby] = useState<Baby | null>(null);
   const [babies, setBabies] = useState<Baby[]>([]);
+  const [babyData, setBabyData] = useState<BabyData | null>(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
@@ -60,6 +181,13 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
       clearCache();
     }
   }, [user]);
+
+  // Check and refresh data on app startup
+  useEffect(() => {
+    if (user?.id) {
+      checkAndRefreshIfNeeded();
+    }
+  }, [user?.id]);
 
   // Update currentBaby when currentBabyId changes
   useEffect(() => {
@@ -91,6 +219,11 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
         if (!isExpired && isSameUser && parsed.babies.length > 0) {
           console.log('Loading babies from cache');
           setBabies(parsed.babies);
+          
+          // Load baby data for current baby if available
+          if (currentBabyId && parsed.babyData[currentBabyId]) {
+            setBabyData(parsed.babyData[currentBabyId]);
+          }
           return;
         }
       }
@@ -104,11 +237,12 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Save babies to cache
-  const saveBabiesToCache = (babiesData: Baby[]) => {
+  const saveBabiesToCache = (babiesData: Baby[], babyDataToCache?: Record<string, BabyData>) => {
     if (!user?.id) return;
     
     const cacheData: CachedBabyData = {
       babies: babiesData,
+      babyData: babyDataToCache || {},
       lastUpdated: Date.now(),
       userId: user.id
     };
@@ -157,13 +291,277 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Refresh baby data for a specific baby
+  const refreshBabyData = async (babyId?: string, _force: boolean = false) => {
+    const targetBabyId = babyId || currentBabyId;
+    if (!targetBabyId || !user?.id) return;
+
+    try {
+      console.log('Fetching baby data for:', targetBabyId);
+      
+      // Fetch all data types in parallel
+      const [
+        bottlesResult,
+        mealsResult,
+        breastResult,
+        pumpsResult,
+        diapersResult,
+        bathsResult,
+        weightsResult,
+        measuresResult,
+        activitiesResult,
+        photosResult
+      ] = await Promise.all([
+        supabase.from('bottles').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('meals').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('breast_feeding').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('pumps').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('diapers').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('baths').select('*').eq('baby_id', targetBabyId).order('date', { ascending: false }),
+        supabase.from('weights').select('*').eq('baby_id', targetBabyId).order('date', { ascending: false }),
+        supabase.from('measures').select('*').eq('baby_id', targetBabyId).order('date', { ascending: false }),
+        supabase.from('activities').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('photos').select('*').eq('baby_id', targetBabyId).order('created_at', { ascending: false })
+      ]);
+
+      const newBabyData: BabyData = {
+        bottles: bottlesResult.data || [],
+        meals: mealsResult.data || [],
+        breast: breastResult.data || [],
+        pumps: pumpsResult.data || [],
+        diapers: diapersResult.data || [],
+        baths: bathsResult.data || [],
+        weights: weightsResult.data || [],
+        measures: measuresResult.data || [],
+        activities: activitiesResult.data || [],
+        photos: photosResult.data || []
+      };
+
+      setBabyData(newBabyData);
+
+      // Update cache
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const parsed: CachedBabyData = JSON.parse(cachedData);
+        parsed.babyData[targetBabyId] = newBabyData;
+        parsed.lastUpdated = Date.now();
+        localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+      }
+
+      console.log('Baby data refreshed successfully');
+    } catch (error) {
+      console.error('Error fetching baby data:', error);
+    }
+  };
+
+  // Data management functions
+  const addData = async <T extends keyof BabyData>(type: T, data: BabyData[T][0]) => {
+    if (!currentBabyId || !user?.id) return;
+
+    try {
+      const tableName = getTableNameForType(type);
+      const insertData = { ...data, baby_id: currentBabyId, user_id: user.id };
+      
+      const { data: result, error } = await supabase
+        .from(tableName)
+        .insert([insertData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error adding ${type}:`, error);
+        throw error;
+      }
+
+      // Update context data
+      setBabyData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [type]: [result, ...prev[type]] as BabyData[T]
+        };
+      });
+
+      // Update cache
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const parsed: CachedBabyData = JSON.parse(cachedData);
+        if (parsed.babyData[currentBabyId]) {
+          parsed.babyData[currentBabyId][type] = [result, ...parsed.babyData[currentBabyId][type]] as BabyData[T];
+          parsed.lastUpdated = Date.now();
+          localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+        }
+      }
+
+      console.log(`${type} added successfully`);
+    } catch (error) {
+      console.error(`Error adding ${type}:`, error);
+      throw error;
+    }
+  };
+
+  const updateData = async <T extends keyof BabyData>(type: T, id: string, data: Partial<BabyData[T][0]>) => {
+    if (!currentBabyId || !user?.id) return;
+
+    try {
+      const tableName = getTableNameForType(type);
+      
+      const { data: result, error } = await supabase
+        .from(tableName)
+        .update(data)
+        .eq('id', id)
+        .eq('baby_id', currentBabyId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating ${type}:`, error);
+        throw error;
+      }
+
+      // Update context data
+      setBabyData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [type]: prev[type].map(item => item.id === id ? result : item) as BabyData[T]
+        };
+      });
+
+      // Update cache
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const parsed: CachedBabyData = JSON.parse(cachedData);
+        if (parsed.babyData[currentBabyId]) {
+          parsed.babyData[currentBabyId][type] = parsed.babyData[currentBabyId][type].map(item => 
+            item.id === id ? result : item
+          ) as BabyData[T];
+          parsed.lastUpdated = Date.now();
+          localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+        }
+      }
+
+      console.log(`${type} updated successfully`);
+    } catch (error) {
+      console.error(`Error updating ${type}:`, error);
+      throw error;
+    }
+  };
+
+  const deleteData = async <T extends keyof BabyData>(type: T, id: string) => {
+    if (!currentBabyId || !user?.id) return;
+
+    try {
+      const tableName = getTableNameForType(type);
+      
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', id)
+        .eq('baby_id', currentBabyId);
+
+      if (error) {
+        console.error(`Error deleting ${type}:`, error);
+        throw error;
+      }
+
+      // Update context data
+      setBabyData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [type]: prev[type].filter(item => item.id !== id) as BabyData[T]
+        };
+      });
+
+      // Update cache
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const parsed: CachedBabyData = JSON.parse(cachedData);
+        if (parsed.babyData[currentBabyId]) {
+          parsed.babyData[currentBabyId][type] = parsed.babyData[currentBabyId][type].filter(item => item.id !== id) as BabyData[T];
+          parsed.lastUpdated = Date.now();
+          localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+        }
+      }
+
+      console.log(`${type} deleted successfully`);
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
+      throw error;
+    }
+  };
+
+  // Helper function to get table name for data type
+  const getTableNameForType = (type: keyof BabyData): string => {
+    const tableMap: Record<keyof BabyData, string> = {
+      bottles: 'bottles',
+      meals: 'meals',
+      breast: 'breast_feeding',
+      pumps: 'pumps',
+      diapers: 'diapers',
+      baths: 'baths',
+      weights: 'weights',
+      measures: 'measures',
+      activities: 'activities',
+      photos: 'photos'
+    };
+    return tableMap[type];
+  };
+
+  // Check if data needs refresh and refresh if necessary
+  const checkAndRefreshIfNeeded = async () => {
+    if (!user?.id) {
+      console.log('No user authenticated, skipping data refresh check');
+      return;
+    }
+
+    try {
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const parsed: CachedBabyData = JSON.parse(cachedData);
+        const timeSinceLastUpdate = Date.now() - parsed.lastUpdated;
+        const isExpired = timeSinceLastUpdate > CACHE_DURATION;
+        const isSameUser = parsed.userId === user.id;
+        
+        console.log(`Data age: ${Math.round(timeSinceLastUpdate / 1000 / 60)} minutes, expired: ${isExpired}, same user: ${isSameUser}`);
+        
+        if (isExpired || !isSameUser) {
+          console.log('Data is expired or user changed, refreshing...');
+          await refreshBabies(true);
+          if (currentBabyId) {
+            await refreshBabyData(currentBabyId, true);
+          }
+        } else {
+          console.log('Data is still fresh, no refresh needed');
+        }
+      } else {
+        console.log('No cached data found, refreshing...');
+        await refreshBabies(true);
+        if (currentBabyId) {
+          await refreshBabyData(currentBabyId, true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking data freshness:', error);
+      // If there's an error, force refresh
+      await refreshBabies(true);
+      if (currentBabyId) {
+        await refreshBabyData(currentBabyId, true);
+      }
+    }
+  };
+
   // Save to localStorage when it changes
   const setCurrentBabyId = (id: string | null) => {
     setCurrentBabyIdState(id);
     if (id) {
       localStorage.setItem("currentBabyId", id);
+      // Load baby data when switching babies
+      refreshBabyData(id, true);
     } else {
       localStorage.removeItem("currentBabyId");
+      setBabyData(null);
     }
   };
 
@@ -172,10 +570,16 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
       currentBabyId, 
       currentBaby, 
       babies, 
+      babyData,
       loading, 
       setCurrentBabyId, 
       refreshBabies, 
-      clearCache 
+      refreshBabyData,
+      addData,
+      updateData,
+      deleteData,
+      clearCache,
+      checkAndRefreshIfNeeded
     }}>
       {children}
     </BabyContext.Provider>

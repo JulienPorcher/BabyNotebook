@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
 import { useBaby } from "../../context/BabyContext";
-import { useAuth } from "../../hooks/useAuth";
 import { activityConfig, getActivitiesByCategory, type ActivityType } from "../../lib/activityConfig";
 import { getRelativeTimeString } from "../../lib/timeUtils";
 
@@ -37,8 +35,7 @@ type ScrollableStatsPanelProps = {
 };
 
 export default function ScrollableStatsPanel({ tab }: ScrollableStatsPanelProps) {
-  const { currentBabyId } = useBaby();
-  const { user } = useAuth();
+  const { babyData } = useBaby();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [panelData, setPanelData] = useState<Record<ActivityType, PanelData>>({
     bottle: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true },
@@ -102,29 +99,50 @@ export default function ScrollableStatsPanel({ tab }: ScrollableStatsPanelProps)
     }
   };
 
-  // Fetch data for all panels
+  // Process data from context
   useEffect(() => {
-    if (!user?.id || !currentBabyId) return;
+    if (!babyData) return;
 
-    const fetchAllData = async () => {
+    const processData = () => {
       const panelTypes = getPanelTypesForTab(tab);
       
       for (const panelType of panelTypes) {
         const config = activityConfig[panelType];
         
-        // Fetch recent logs
-        const { data: logs, error: logsError } = await supabase
-          .from(config.table)
-          .select("*")
-          .eq("baby_id", currentBabyId)
-          .eq("user_id", user.id)
-          .order(config.dateColumn, { ascending: false })
-          .limit(10);
-
-        if (logsError) {
-          console.error(`Error fetching ${panelType} logs:`, logsError);
-          continue;
+        // Get data from context based on panel type
+        let logs: any[] = [];
+        switch (panelType) {
+          case 'bottle':
+            logs = babyData.bottles || [];
+            break;
+          case 'meal':
+            logs = babyData.meals || [];
+            break;
+          case 'breast':
+            logs = babyData.breast || [];
+            break;
+          case 'pump':
+            logs = babyData.pumps || [];
+            break;
+          case 'diaper':
+            logs = babyData.diapers || [];
+            break;
+          case 'bath':
+            logs = babyData.baths || [];
+            break;
+          case 'weight':
+            logs = babyData.weights || [];
+            break;
+          case 'measure':
+            logs = babyData.measures || [];
+            break;
+          case 'activity':
+            logs = babyData.activities || [];
+            break;
         }
+
+        // Take only recent logs (limit to 10)
+        logs = logs.slice(0, 10);
 
         // Calculate stats
         const today = new Date().toDateString();
@@ -169,8 +187,8 @@ export default function ScrollableStatsPanel({ tab }: ScrollableStatsPanelProps)
       }
     };
 
-    fetchAllData();
-  }, [currentBabyId, user?.id, refreshTrigger, tab]);
+    processData();
+  }, [babyData, refreshTrigger, tab]);
 
   const panelTypes = getPanelTypesForTab(tab);
 

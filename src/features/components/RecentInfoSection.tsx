@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { useBaby } from '../../context/BabyContext';
 import { getRelativeTimeString, getRelativeDateString } from '../../lib/timeUtils';
 
 interface RecentData {
@@ -16,6 +16,7 @@ interface RecentInfoSectionProps {
 }
 
 export default function RecentInfoSection({ currentBabyId, onDataRefresh, onBabyChange }: RecentInfoSectionProps) {
+  const { babyData } = useBaby();
   const [recentData, setRecentData] = useState<RecentData>({
     lastMeal: null,
     lastDiaper: null,
@@ -23,114 +24,97 @@ export default function RecentInfoSection({ currentBabyId, onDataRefresh, onBaby
     lastPump: null
   });
 
-  // Fetch recent data from view_home_last_news
-  const fetchRecentData = async () => {
-    if (!currentBabyId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('view_home_last_news')
-        .select('*')
-        .eq('baby_id', currentBabyId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching recent data:', error);
-        return;
-      }
-
-      // Debug: Log the data from the view
-      console.log('Recent data from view:', data);
-      
-      // If no data exists for this baby, set all to null
-      if (!data) {
-        setRecentData({
-          lastMeal: null,
-          lastDiaper: null,
-          lastBath: null,
-          lastPump: null
-        });
-        return;
-      }
-
-      console.log('Diaper data:', {
-        last_diaper: data.last_diaper,
-        last_diaper_at: data.last_diaper_at,
-        diaper_type: data.diaper_type
-      });
-
-      // Determine the most recent meal type based on datetime
-      const lastBottleAt = data.last_bottle_at;
-      const lastMealAt = data.last_meal_at;
-      const lastBreastfeedingAt = data.last_breastfeeding_at;
-      
-      let lastMeal = null;
-      let mostRecentTime = null;
-      
-      // Compare timestamps to find the most recent meal
-      if (lastBottleAt && (!mostRecentTime || lastBottleAt > mostRecentTime)) {
-        mostRecentTime = lastBottleAt;
-        lastMeal = {
-          type: 'Biberon',
-          value: `${data.bottle_quantity || 0}ml`,
-          datetime: lastBottleAt
-        };
-      }
-      
-      if (lastMealAt && (!mostRecentTime || lastMealAt > mostRecentTime)) {
-        mostRecentTime = lastMealAt;
-        lastMeal = {
-          type: 'Solide',
-          value: `${data.meal_quantity || 0}g`,
-          datetime: lastMealAt
-        };
-      }
-      
-      if (lastBreastfeedingAt && (!mostRecentTime || lastBreastfeedingAt > mostRecentTime)) {
-        mostRecentTime = lastBreastfeedingAt;
-        lastMeal = {
-          type: 'Allaitement',
-          value: `${data.breastfeeding_time || 0}min`,
-          datetime: lastBreastfeedingAt
-        };
-      }
-
-      // Process the data from the view
-      const processedData = {
-        lastMeal,
-        lastDiaper: data.last_diaper_at ? {
-          value: data.diaper_type,
-          datetime: data.last_diaper_at
-        } : null,
-        lastBath: data.last_bath_at ? {
-          datetime: data.last_bath_at || ''
-        } : null,
-        lastPump: data.last_pump_at ? {
-          datetime: data.last_pump_at || ''
-        } : null
-      };
-
-      setRecentData(processedData);
-    } catch (error) {
-      console.error('Error fetching recent data:', error);
-    }
-  };
-
-  // Fetch recent data when baby changes or clear when no baby
-  useEffect(() => {
-    if (currentBabyId) {
-      fetchRecentData();
-    } else {
-      // Clear data when no baby is selected
+  // Process recent data from context
+  const processRecentData = () => {
+    if (!babyData || !currentBabyId) {
       setRecentData({
         lastMeal: null,
         lastDiaper: null,
         lastBath: null,
         lastPump: null
       });
+      return;
     }
-    
-    // Notify parent that baby changed (for cache clearing)
+
+    // Get the most recent entries from each category
+    const bottles = babyData.bottles || [];
+    const meals = babyData.meals || [];
+    const breast = babyData.breast || [];
+    const pumps = babyData.pumps || [];
+    const diapers = babyData.diapers || [];
+    const baths = babyData.baths || [];
+
+    // Find most recent meal (bottle, solid meal, or breastfeeding)
+    const mealCandidates = [];
+
+    // Add bottles
+    if (bottles.length > 0) {
+      const lastBottle = bottles[0];
+      mealCandidates.push({
+        type: 'Biberon',
+        value: `${lastBottle.quantity || 0}ml`,
+        datetime: lastBottle.date_time
+      });
+    }
+
+    // Add solid meals
+    if (meals.length > 0) {
+      const lastMealEntry = meals[0];
+      mealCandidates.push({
+        type: 'Solide',
+        value: `${lastMealEntry.quantity || 0}g`,
+        datetime: lastMealEntry.date_time
+      });
+    }
+
+    // Add breastfeeding
+    if (breast.length > 0) {
+      const lastBreast = breast[0];
+      mealCandidates.push({
+        type: 'Allaitement',
+        value: `${lastBreast.duration || 0}min`,
+        datetime: lastBreast.date_time
+      });
+    }
+
+    // Find the most recent meal
+    const lastMeal = mealCandidates.length > 0 
+      ? mealCandidates.reduce((latest, current) => 
+          current.datetime > latest.datetime ? current : latest
+        )
+      : null;
+
+    // Get most recent diaper
+    const lastDiaper = diapers.length > 0 ? {
+      value: diapers[0].type,
+      datetime: diapers[0].date_time
+    } : null;
+
+    // Get most recent bath
+    const lastBath = baths.length > 0 ? {
+      datetime: baths[0].date
+    } : null;
+
+    // Get most recent pump
+    const lastPump = pumps.length > 0 ? {
+      datetime: pumps[0].date_time
+    } : null;
+
+    setRecentData({
+      lastMeal,
+      lastDiaper,
+      lastBath,
+      lastPump
+    });
+  };
+
+  // Process recent data when baby data changes
+  useEffect(() => {
+    processRecentData();
+  }, [babyData, currentBabyId]);
+
+  // Notify parent that baby changed (for cache clearing)
+  useEffect(() => {
     if (onBabyChange) {
       onBabyChange();
     }
