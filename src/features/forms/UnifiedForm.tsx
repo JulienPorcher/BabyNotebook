@@ -5,7 +5,7 @@ import { bathFormConfig } from "./BathForm";
 import { bottleFormConfig } from "./BottleForm";
 import { pumpFormConfig } from "./PumpForm";
 import { diaperFormConfig } from "./DiaperForm";
-import { activityFormConfig } from "./ActivityForm";
+import { observationFormConfig } from "./ObservationForm";
 import { weightFormConfig } from "./WeightForm";
 import { measureFormConfig } from "./MeasureForm";
 import { babyFormConfig } from "./BabyForm";
@@ -39,7 +39,7 @@ const formConfigs: Record<FormPage, FormConfig> = {
   bottle: bottleFormConfig,
   pump: pumpFormConfig,
   diaper: diaperFormConfig,
-  activity: activityFormConfig,
+  activity: observationFormConfig,
   weight: weightFormConfig,
   measure: measureFormConfig,
   breast: breastFormConfig,

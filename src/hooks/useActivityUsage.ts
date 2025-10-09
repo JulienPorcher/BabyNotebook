@@ -95,7 +95,7 @@ export function useActivityUsage() {
     });
 
     // Count activities (uses date_time)
-    babyData.activities.forEach(activity => {
+    babyData.observations.forEach(activity => {
       const activityDate = new Date(activity.date_time);
       if (activityDate >= thirtyDaysAgo) {
         usageMap.activity++;

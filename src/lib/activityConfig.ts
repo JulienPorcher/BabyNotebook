@@ -98,15 +98,15 @@ export const activityConfig = {
   
   // Activities
   activity: {
-    title: "Activité",
+    title: "Observation",
     icon: Baby,
-    table: "activities",
+    table: "observations",
     dateColumn: "date_time",
     unit: "",
     color: "bg-emerald-50 border-emerald-200",
     textColor: "text-emerald-700",
     quantityType: null! as string,
-    category: "hygiene" as const
+    category: "health" as const
   },
   
   // Gallery-related activities

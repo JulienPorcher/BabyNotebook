@@ -80,7 +80,7 @@ export default function HomePage() {
           bottle: 'bottles',
           pump: 'pumps',
           diaper: 'diapers',
-          activity: 'activities',
+          activity: 'observations',
           bath: 'baths',
           weight: 'weights',
           measure: 'measures',

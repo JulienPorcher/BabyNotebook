@@ -152,6 +152,10 @@ export default function GalleryPage() {
       setUploading(true);
       console.log("Starting upload for baby:", currentBabyId, "user:", user.id);
       
+      // Get file metadata
+      const fileSize = selectedFile.size;
+      const mimeType = selectedFile.type;
+      
       // Upload file to Supabase storage
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
@@ -169,8 +173,9 @@ export default function GalleryPage() {
       }
 
       console.log("File uploaded successfully, saving to database...");
-      // Save photo record using context with required fields
-      await addData('photos', {
+      
+      // Save photo record with enhanced metadata
+      const photoData = {
         id: uuidv4(),
         baby_id: currentBabyId,
         user_id: user.id,
@@ -178,10 +183,43 @@ export default function GalleryPage() {
         path: filePath,
         description: description,
         category: category,
-        title: title || undefined
-      } as any);
+        title: title || undefined,
+        file_size: fileSize,
+        mime_type: mimeType,
+        encrypted: false
+      };
+
+      await addData('photos', photoData as any);
 
       console.log("Photo saved to database successfully");
+      
+      // Trigger thumbnail generation (this would typically be done via webhook or queue)
+      // Note: This is optional and will gracefully degrade if the function doesn't exist
+      try {
+        const session = await supabase.auth.getSession();
+        if (session.data.session?.access_token) {
+          await fetch('/api/generate-thumbnails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.data.session.access_token}`
+            },
+            body: JSON.stringify({
+              originalPath: filePath,
+              qualities: [
+                { quality: 'thumbnail', size: 150 },
+                { quality: 'preview', size: 300 },
+                { quality: 'medium', size: 800 }
+              ]
+            })
+          });
+        }
+      } catch (thumbnailError) {
+        console.warn("Thumbnail generation failed (this is optional):", thumbnailError);
+        // Continue without thumbnails - they can be generated later
+        // The media delivery service will fallback to original images
+      }
+      
       // Clean up and refresh
       URL.revokeObjectURL(previewUrl);
       setSelectedFile(null);

@@ -106,9 +106,22 @@ export type Photo = {
   baby_id: string;
   user_id: string;
   path: string;
+  thumbnail_path?: string;
+  preview_path?: string;
+  medium_path?: string;
   description?: string;
   category?: string;
   title?: string;
+  file_size?: number;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  mime_type?: string;
+  checksum?: string;
+  encrypted?: boolean;
+  encryption_key_id?: string;
+  last_accessed?: string;
   created_at: string;
 };
 
@@ -121,7 +134,7 @@ export type BabyData = {
   baths: Bath[];
   weights: Weight[];
   measures: Measure[];
-  activities: Activity[];
+  observations: Activity[];
   photos: Photo[];
 };
 

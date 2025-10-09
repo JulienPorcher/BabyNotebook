@@ -5,7 +5,7 @@ import { useBaby } from "../context/BabyContext";
 const tabs = [
   { path: "/", icon: <Home size={24} /> },
   { path: "/overview", icon: <Utensils size={24} /> },
-  { path: "/evolution", icon: <Baby size={24} /> },
+  { path: "/prolink", icon: <Baby size={24} /> },
   { path: "/gallery", icon: <Image size={24} /> },
   { path: "/settings", icon: <Settings size={24} /> },
 ];
