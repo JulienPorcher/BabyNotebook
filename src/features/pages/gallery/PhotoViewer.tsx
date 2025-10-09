@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
+import { useClickOutside } from "../../../lib/modalUtils";
 import type { Photo } from "../../../context/BabyTypes";
 
 interface PhotoViewerProps {
@@ -16,6 +17,7 @@ export default function PhotoViewer({
   onClose, 
   onNavigate 
 }: PhotoViewerProps) {
+  const handleBackdropClick = useClickOutside(onClose);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(1);
@@ -74,6 +76,7 @@ export default function PhotoViewer({
   return (
     <div 
       className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center"
+      onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >

@@ -13,7 +13,7 @@ import { MealFormComponent, BottleFormComponent, DiaperFormComponent, BreastForm
 import { useFormSubmission } from "./formHelpers";
 import FormWrapper from "./components/FormWrapper";
 
-export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal' | 'breast' | 'baby';
+export type FormPage = 'bath' | 'diaper' | 'activity' | 'weight' | 'measure' | 'bottle' | 'pump' | 'meal' | 'breast' | 'baby' | 'souvenir' | 'etapes';
 
 interface FormField {
   name: string;
@@ -43,7 +43,19 @@ const formConfigs: Record<FormPage, FormConfig> = {
   weight: weightFormConfig,
   measure: measureFormConfig,
   breast: breastFormConfig,
-  baby: babyFormConfig
+  baby: babyFormConfig,
+  souvenir: {
+    title: "Souvenir",
+    fields: [],
+    submitButtonColor: "bg-purple-500",
+    isModal: true
+  },
+  etapes: {
+    title: "Étapes",
+    fields: [],
+    submitButtonColor: "bg-green-500",
+    isModal: true
+  }
 };
 
 interface UnifiedFormProps {
@@ -70,6 +82,26 @@ export default function UnifiedForm({ page, onSubmit, onClose, babyId }: Unified
         return <DiaperFormComponent onSubmit={onSubmit} onClose={onClose} babyId={babyId} />;
       case 'breast':
         return <BreastFormComponent onSubmit={onSubmit} onClose={onClose || (() => {})} />;
+      case 'souvenir':
+      case 'etapes':
+        // Gallery activities - redirect to gallery page
+        return (
+          <div className="text-center py-8">
+            <p className="text-gray-600 mb-4">
+              {page === 'souvenir' ? 'Pour ajouter un souvenir, allez dans la galerie photos.' : 'Pour ajouter une étape, allez dans la galerie photos.'}
+            </p>
+            <button
+              onClick={() => {
+                onClose?.();
+                // Navigate to gallery page
+                window.location.href = '/gallery';
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+            >
+              Aller à la galerie
+            </button>
+          </div>
+        );
       default:
         return null;
     }

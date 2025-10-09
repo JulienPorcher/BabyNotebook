@@ -1,4 +1,5 @@
 import { Upload } from "lucide-react";
+import { useClickOutside } from "../../../lib/modalUtils";
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export default function UploadModal({
   onUpload,
   uploading
 }: UploadModalProps) {
+  const handleBackdropClick = useClickOutside(onClose);
+  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -31,7 +34,10 @@ export default function UploadModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white p-6 rounded-xl max-w-md w-full mx-4">
         <h3 className="text-lg font-semibold mb-4">Ajouter une photo</h3>
         <div className="space-y-4">

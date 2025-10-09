@@ -107,6 +107,8 @@ export type Photo = {
   user_id: string;
   path: string;
   description?: string;
+  category?: string;
+  title?: string;
   created_at: string;
 };
 

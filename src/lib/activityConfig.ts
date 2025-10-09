@@ -1,4 +1,4 @@
-import { Utensils, Heart, HeartPlus, Milk, Baby, Droplets, Scale, Ruler } from "lucide-react";
+import { Utensils, Heart, HeartPlus, Milk, Baby, Droplets, Scale, Ruler, Star } from "lucide-react";
 
 // Centralized configuration for all activity types
 export const activityConfig = {
@@ -107,12 +107,36 @@ export const activityConfig = {
     textColor: "text-emerald-700",
     quantityType: null! as string,
     category: "hygiene" as const
+  },
+  
+  // Gallery-related activities
+  souvenir: {
+    title: "Souvenir",
+    icon: Heart,
+    table: "photos",
+    dateColumn: "created_at",
+    unit: "",
+    color: "bg-purple-50 border-purple-200",
+    textColor: "text-purple-700",
+    quantityType: null! as void,
+    category: "gallery" as const
+  },
+  etapes: {
+    title: "Étapes",
+    icon: Star,
+    table: "photos",
+    dateColumn: "created_at",
+    unit: "",
+    color: "bg-green-50 border-green-200",
+    textColor: "text-green-700",
+    quantityType: null! as void,
+    category: "gallery" as const
   }
 } as const;
 
 // Type definitions
 export type ActivityType = keyof typeof activityConfig;
-export type ActivityCategory = 'meal' | 'hygiene' | 'health';
+export type ActivityCategory = 'meal' | 'hygiene' | 'health' | 'gallery';
 
 // Helper functions
 export const getTableName = (activityType: ActivityType): string => {

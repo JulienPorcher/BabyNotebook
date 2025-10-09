@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS photos (
   baby_id UUID NOT NULL REFERENCES babies(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   description TEXT,
+  category TEXT DEFAULT 'general',
+  title TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

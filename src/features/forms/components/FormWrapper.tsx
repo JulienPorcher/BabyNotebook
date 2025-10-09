@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { useClickOutside } from '../../../lib/modalUtils';
 
 interface FormWrapperProps {
   title: string;
@@ -21,13 +22,18 @@ export default function FormWrapper({
   submitButtonText = 'Enregistrer',
   submitButtonColor = 'bg-pink-500'
 }: FormWrapperProps) {
+  const handleBackdropClick = useClickOutside(onClose || (() => {}));
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit({});
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white rounded-2xl shadow-lg p-6 w-96 space-y-4">
         <h2 className="text-lg font-semibold text-center">{title}</h2>
         

@@ -143,6 +143,15 @@ export default function PhotoItem({ photo, onDelete, onOpen }: PhotoItemProps) {
         </button>
       </div>
 
+      {/* Title overlay at bottom */}
+      {(photo.title || photo.description) && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-2 rounded-b-lg">
+          <div className="text-sm font-medium truncate">
+            {photo.title || photo.description}
+          </div>
+        </div>
+      )}
+
       {/* Delete button */}
       <button
         onClick={handleDelete}

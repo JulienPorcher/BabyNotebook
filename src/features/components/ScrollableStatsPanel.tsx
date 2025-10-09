@@ -46,7 +46,9 @@ export default function ScrollableStatsPanel({ tab }: ScrollableStatsPanelProps)
     bath: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true },
     weight: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true },
     measure: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true },
-    activity: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true }
+    activity: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true },
+    souvenir: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true },
+    etapes: { logs: [], stats: { todayCount: 0, todayTotal: 0, weekAverage: 0, hasData: false }, loading: true }
   });
 
   // Listen for data refresh events
