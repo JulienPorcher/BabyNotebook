@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient";
-import type { Photo } from "./types";
+import type { Photo } from "../../../context/BabyTypes";
 
 interface PhotoViewerProps {
   photos: Photo[];

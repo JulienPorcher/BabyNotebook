@@ -2,136 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
-
-type Baby = {
-  id: string;
-  name: string;
-  birth_date: string;
-  gender: string;
-  user_id: string;
-  role: string;
-  nickname: string;
-};
-
-// Data types for each activity
-type Bottle = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date_time: string;
-  quantity: number;
-  comment?: string;
-  created_at: string;
-};
-
-type Meal = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date_time: string;
-  quantity: number;
-  comment?: string;
-  created_at: string;
-};
-
-type Breast = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date_time: string;
-  duration: number;
-  side: string;
-  comment?: string;
-  created_at: string;
-};
-
-type Pump = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date_time: string;
-  quantity: number;
-  comment?: string;
-  created_at: string;
-};
-
-type Diaper = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date_time: string;
-  type: string;
-  comment?: string;
-  created_at: string;
-};
-
-type Bath = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date: string;
-  comment?: string;
-  created_at: string;
-};
-
-type Weight = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date: string;
-  weight: number;
-  comment?: string;
-  created_at: string;
-};
-
-type Measure = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date: string;
-  height: number;
-  comment?: string;
-  created_at: string;
-};
-
-type Activity = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  date_time: string;
-  activity_type: string;
-  comment?: string;
-  created_at: string;
-};
-
-type Photo = {
-  id: string;
-  baby_id: string;
-  user_id: string;
-  path: string;
-  description?: string;
-  created_at: string;
-};
-
-export type BabyData = {
-  bottles: Bottle[];
-  meals: Meal[];
-  breast: Breast[];
-  pumps: Pump[];
-  diapers: Diaper[];
-  baths: Bath[];
-  weights: Weight[];
-  measures: Measure[];
-  activities: Activity[];
-  photos: Photo[];
-};
-
-type CachedBabyData = {
-  babies: Baby[];
-  babyData: Record<string, BabyData>;
-  lastUpdated: number;
-  userId: string;
-};
+import { type Baby, type BabyData, type CachedBabyData } from "./BabyTypes";
+import { getTableNameForType } from "./BabyHelpers";
+export type { BabyData } from "./BabyTypes";
 
 type BabyContextType = {
   currentBabyId: string | null;
@@ -139,9 +12,9 @@ type BabyContextType = {
   babies: Baby[];
   babyData: BabyData | null;
   loading: boolean;
-  setCurrentBabyId: (id: string | null) => void;
+  setCurrentBabyId: (id: string | null) => Promise<void>;
   refreshBabies: (force?: boolean) => Promise<void>;
-  refreshBabyData: (babyId?: string, force?: boolean) => Promise<void>;
+  refreshBabyData: (babyId?: string) => Promise<void>;
   addData: <T extends keyof BabyData>(type: T, data: BabyData[T][0]) => Promise<void>;
   updateData: <T extends keyof BabyData>(type: T, id: string, data: Partial<BabyData[T][0]>) => Promise<void>;
   deleteData: <T extends keyof BabyData>(type: T, id: string) => Promise<void>;
@@ -220,9 +93,23 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
           console.log('Loading babies from cache');
           setBabies(parsed.babies);
           
-          // Load baby data for current baby if available
-          if (currentBabyId && parsed.babyData[currentBabyId]) {
-            setBabyData(parsed.babyData[currentBabyId]);
+          // Load baby data from cache even if currentBabyId is not yet set
+          let selectedId = currentBabyId || null;
+          const hasCachedForCurrent = selectedId && parsed.babyData[selectedId];
+
+          if (!hasCachedForCurrent) {
+            const cachedIds = Object.keys(parsed.babyData || {});
+            // Prefer a baby that has cached data; otherwise fall back to first baby
+            selectedId = (cachedIds.length > 0 ? cachedIds[0] : (parsed.babies[0]?.id || null));
+          }
+
+          if (selectedId) {
+            // Set current baby id locally without triggering a network fetch
+            setCurrentBabyIdState(selectedId);
+            localStorage.setItem("currentBabyId", selectedId);
+            if (parsed.babyData[selectedId]) {
+              setBabyData(parsed.babyData[selectedId]);
+            }
           }
           return;
         }
@@ -292,7 +179,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Refresh baby data for a specific baby
-  const refreshBabyData = async (babyId?: string, _force: boolean = false) => {
+  const refreshBabyData = async (babyId?: string) => {
     const targetBabyId = babyId || currentBabyId;
     if (!targetBabyId || !user?.id) return;
 
@@ -492,22 +379,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Helper function to get table name for data type
-  const getTableNameForType = (type: keyof BabyData): string => {
-    const tableMap: Record<keyof BabyData, string> = {
-      bottles: 'bottles',
-      meals: 'meals',
-      breast: 'breast_feeding',
-      pumps: 'pumps',
-      diapers: 'diapers',
-      baths: 'baths',
-      weights: 'weights',
-      measures: 'measures',
-      activities: 'activities',
-      photos: 'photos'
-    };
-    return tableMap[type];
-  };
+  // table name mapping imported from helpers
 
   // Check if data needs refresh and refresh if necessary
   const checkAndRefreshIfNeeded = async () => {
@@ -530,7 +402,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
           console.log('Data is expired or user changed, refreshing...');
           await refreshBabies(true);
           if (currentBabyId) {
-            await refreshBabyData(currentBabyId, true);
+            await refreshBabyData(currentBabyId);
           }
         } else {
           console.log('Data is still fresh, no refresh needed');
@@ -539,7 +411,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
         console.log('No cached data found, refreshing...');
         await refreshBabies(true);
         if (currentBabyId) {
-          await refreshBabyData(currentBabyId, true);
+          await refreshBabyData(currentBabyId);
         }
       }
     } catch (error) {
@@ -547,18 +419,18 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
       // If there's an error, force refresh
       await refreshBabies(true);
       if (currentBabyId) {
-        await refreshBabyData(currentBabyId, true);
+        await refreshBabyData(currentBabyId);
       }
     }
   };
 
   // Save to localStorage when it changes
-  const setCurrentBabyId = (id: string | null) => {
+  const setCurrentBabyId = async (id: string | null) => {
     setCurrentBabyIdState(id);
     if (id) {
       localStorage.setItem("currentBabyId", id);
       // Load baby data when switching babies
-      refreshBabyData(id, true);
+      await refreshBabyData(id);
     } else {
       localStorage.removeItem("currentBabyId");
       setBabyData(null);

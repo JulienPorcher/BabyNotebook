@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import { useBaby } from '../context/BabyContext';
 import { activityConfig, type ActivityType } from '../lib/activityConfig';
 // Using native JavaScript date functions instead of date-fns
@@ -22,15 +23,9 @@ export default function TimelineRibbon({ babyId }: TimelineRibbonProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Get the last 30 hours, with right edge rounded to next hour
+  // Get the last 30 hours window ending at "now" to avoid excluding recent events
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  
-  // Round up to next hour if there are minutes
-  const endHour = currentMinute > 0 ? currentHour + 1 : currentHour;
-  const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0);
-  
+  const endTime = new Date(now.getTime());
   // Start time is 30 hours before the end time
   const startTime = new Date(endTime.getTime() - 30 * 60 * 60 * 1000);
 
@@ -43,9 +38,6 @@ export default function TimelineRibbon({ babyId }: TimelineRibbonProps) {
     const processTimelineEvents = () => {
       setLoading(true);
       try {
-        const startDateTime = startTime.toISOString();
-        const endDateTime = endTime.toISOString();
-
         // Process all datetime-based events from context
         const eventTypes: ActivityType[] = ['bottle', 'meal', 'breast', 'pump', 'diaper'];
         const allEvents: TimelineEvent[] = [];
@@ -73,10 +65,10 @@ export default function TimelineRibbon({ babyId }: TimelineRibbonProps) {
               break;
           }
 
-          // Filter events within the time range
+          // Filter events within the time range (use Date objects for robust comparisons)
           const filteredData = data.filter(item => {
-            const itemTime = item.date_time;
-            return itemTime >= startDateTime && itemTime <= endDateTime;
+            const itemTime = new Date(item.date_time);
+            return itemTime >= startTime && itemTime <= endTime;
           });
 
           const typedEvents: TimelineEvent[] = filteredData.map(item => ({
@@ -142,7 +134,7 @@ export default function TimelineRibbon({ babyId }: TimelineRibbonProps) {
       const markerTime = new Date(startTime.getTime() + hour * 60 * 60 * 1000);
       const position = (hour / 30) * 100;
       
-      // Show labels for midnight (0h), 6h, 12h, 18h, and 24h (next midnight)
+      // Show labels for midnight (0h), 6h, 12h, 18h, and 24h (next midnight) within the 30-hour window
       const hourOfDay = markerTime.getHours();
       const showLabel = hourOfDay === 0 || hourOfDay === 6 || hourOfDay === 12 || hourOfDay === 18;
       

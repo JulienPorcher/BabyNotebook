@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
-import { useBaby, type BabyData } from "../../context/BabyContext";
+import { useBaby } from "../../context/BabyContext";
+import { type BabyData } from "../../context/BabyTypes";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
 import BabySelector from "../components/BabySelector";
@@ -125,7 +126,7 @@ export default function HomePage() {
     await refreshBabies(true);
     // Also refresh baby data if we have a current baby
     if (currentBabyId) {
-      await refreshBabyData(currentBabyId, true);
+      await refreshBabyData(currentBabyId);
     }
     setIsRefreshing(false);
   };

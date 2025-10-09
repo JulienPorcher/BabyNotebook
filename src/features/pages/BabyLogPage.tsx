@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useBaby, type BabyData } from "../../context/BabyContext";
+import { useBaby } from "../../context/BabyContext";
+import { type BabyData } from "../../context/BabyTypes";
 import { useAuth } from "../../hooks/useAuth";
 import UnifiedForm from "../forms/UnifiedForm";
 import ScrollableStatsPanel from "../components/ScrollableStatsPanel";

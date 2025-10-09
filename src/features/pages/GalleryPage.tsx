@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { PlusCircle, Image as ImageIcon } from "lucide-react";
 import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
@@ -6,7 +7,7 @@ import { supabase } from "../../lib/supabaseClient";
 import PhotoItem from "./gallery/PhotoItem";
 import PhotoViewer from "./gallery/PhotoViewer";
 import UploadModal from "./gallery/UploadModal";
-import type { Photo } from "./gallery/types";
+import type { Photo } from "../../context/BabyTypes";
 
 export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
@@ -27,7 +28,7 @@ export default function GalleryPage() {
   useEffect(() => {
     if (currentBabyId) {
       setLoading(true);
-      refreshBabyData(currentBabyId, true).finally(() => {
+      refreshBabyData(currentBabyId).finally(() => {
         setLoading(false);
       });
       testStorageAccess();
@@ -118,8 +119,12 @@ export default function GalleryPage() {
       }
 
       console.log("File uploaded successfully, saving to database...");
-      // Save photo record using context
+      // Save photo record using context with required fields
       await addData('photos', {
+        id: uuidv4(),
+        baby_id: currentBabyId,
+        user_id: user.id,
+        created_at: new Date().toISOString(),
         path: filePath,
         description: description
       } as any);
