@@ -10,7 +10,7 @@ export const getTableNameForType = (type: keyof BabyData): string => {
     baths: 'baths',
     weights: 'weights',
     measures: 'measures',
-    activities: 'activities',
+    observations: 'observations',
     photos: 'photos'
   };
   return tableMap[type];

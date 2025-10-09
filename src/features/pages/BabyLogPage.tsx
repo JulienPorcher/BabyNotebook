@@ -34,7 +34,7 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
       bath: 'baths',
       weight: 'weights',
       measure: 'measures',
-      activity: 'activities',
+      activity: 'observations',
       souvenir: 'photos',
       etapes: 'photos'
     };
@@ -109,14 +109,14 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
               onClick={() => { setSelectedFormPage("measure"); setShowForm(true); }}
               className="w-full"
             />
-          </div>
-        ) : page === "calendar" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
             <SquareButton
               activityType="activity"
               onClick={() => { setSelectedFormPage("activity"); setShowForm(true); }}
               className="w-full"
             />
+          </div>
+        ) : page === "calendar" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
           </div>
         ) : null}
       </div>

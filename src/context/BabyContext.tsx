@@ -207,7 +207,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
         supabase.from('baths').select('*').eq('baby_id', targetBabyId).order('date', { ascending: false }),
         supabase.from('weights').select('*').eq('baby_id', targetBabyId).order('date', { ascending: false }),
         supabase.from('measures').select('*').eq('baby_id', targetBabyId).order('date', { ascending: false }),
-        supabase.from('activities').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
+        supabase.from('observations').select('*').eq('baby_id', targetBabyId).order('date_time', { ascending: false }),
         supabase.from('photos').select('*').eq('baby_id', targetBabyId).order('created_at', { ascending: false })
       ]);
 
@@ -220,7 +220,7 @@ export function BabyProvider({ children }: { children: React.ReactNode }) {
         baths: bathsResult.data || [],
         weights: weightsResult.data || [],
         measures: measuresResult.data || [],
-        activities: activitiesResult.data || [],
+        observations: activitiesResult.data || [],
         photos: photosResult.data || []
       };
 

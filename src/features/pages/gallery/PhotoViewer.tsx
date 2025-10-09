@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
-import { supabase } from "../../../lib/supabaseClient";
+import { useState, useEffect, useRef } from "react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw, Download, Info } from "lucide-react";
+import { mediaDeliveryService, MediaQuality } from "../../../services/mediaDeliveryService";
 import { useClickOutside } from "../../../lib/modalUtils";
 import type { Photo } from "../../../context/BabyTypes";
 
@@ -19,9 +19,13 @@ export default function PhotoViewer({
 }: PhotoViewerProps) {
   const handleBackdropClick = useClickOutside(onClose);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const [currentQuality, setCurrentQuality] = useState<MediaQuality>(MediaQuality.PREVIEW);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
+  const [preloadingNext, setPreloadingNext] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const currentPhoto = photos[currentIndex];
 
@@ -30,17 +34,34 @@ export default function PhotoViewer({
       if (!currentPhoto) return;
       
       setLoading(true);
+      setZoom(1);
+      setRotation(0);
+      
       try {
-        const { data, error } = await supabase.storage
-          .from("photos")
-          .createSignedUrl(currentPhoto.path, 3600);
-        
-        if (error) {
-          console.error("Error creating signed URL:", error);
-          return;
-        }
-        
-        setCurrentPhotoUrl(data.signedUrl);
+        // Start with medium quality for viewer
+        const mediumUrl = await mediaDeliveryService.getMediaUrl(
+          currentPhoto.id, 
+          MediaQuality.MEDIUM
+        );
+        setCurrentPhotoUrl(mediumUrl);
+        setCurrentQuality(MediaQuality.MEDIUM);
+
+        // Preload full quality in background
+        setTimeout(async () => {
+          try {
+            const fullUrl = await mediaDeliveryService.getMediaUrl(
+              currentPhoto.id, 
+              MediaQuality.FULL
+            );
+            setCurrentPhotoUrl(fullUrl);
+            setCurrentQuality(MediaQuality.FULL);
+          } catch (error) {
+            console.error('Error loading full quality:', error);
+          }
+        }, 500);
+
+        // Preload adjacent photos
+        preloadAdjacentPhotos();
       } catch (error) {
         console.error("Error loading photo:", error);
       } finally {
@@ -49,9 +70,31 @@ export default function PhotoViewer({
     };
 
     loadPhoto();
-    setZoom(1);
-    setRotation(0);
   }, [currentPhoto]);
+
+  const preloadAdjacentPhotos = async () => {
+    const adjacentIndices = [
+      currentIndex - 1,
+      currentIndex + 1
+    ].filter(index => index >= 0 && index < photos.length);
+
+    setPreloadingNext(true);
+    
+    try {
+      await Promise.allSettled(
+        adjacentIndices.map(async (index) => {
+          const photo = photos[index];
+          if (photo) {
+            await mediaDeliveryService.getMediaUrl(photo.id, MediaQuality.MEDIUM);
+          }
+        })
+      );
+    } catch (error) {
+      console.error('Error preloading adjacent photos:', error);
+    } finally {
+      setPreloadingNext(false);
+    }
+  };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
@@ -69,6 +112,35 @@ export default function PhotoViewer({
     if (e.key === 'Escape') onClose();
     if (e.key === 'ArrowLeft') handlePrevious();
     if (e.key === 'ArrowRight') handleNext();
+    if (e.key === 'i' || e.key === 'I') setShowInfo(!showInfo);
+  };
+
+  const handleDownload = async () => {
+    if (!currentPhoto) return;
+    
+    try {
+      const fullQualityUrl = await mediaDeliveryService.getMediaUrl(
+        currentPhoto.id, 
+        MediaQuality.FULL
+      );
+      
+      const link = document.createElement('a');
+      link.href = fullQualityUrl;
+      link.download = `${currentPhoto.title || 'photo'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.deltaY > 0) {
+      setZoom(Math.max(0.5, zoom - 0.1));
+    } else {
+      setZoom(Math.min(3, zoom + 0.1));
+    }
   };
 
   if (!currentPhoto) return null;
@@ -78,6 +150,7 @@ export default function PhotoViewer({
       className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center"
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
+      onWheel={handleWheel}
       tabIndex={0}
     >
       {/* Close button */}
@@ -114,14 +187,32 @@ export default function PhotoViewer({
         ) : currentPhotoUrl ? (
           <div className="relative max-w-full max-h-full">
             <img
+              ref={imgRef}
               src={currentPhotoUrl}
               alt="Photo"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain transition-all duration-300"
               style={{
                 transform: `scale(${zoom}) rotate(${rotation}deg)`,
                 transition: 'transform 0.3s ease'
               }}
+              onLoad={() => {
+                console.log(`Photo loaded (${currentQuality}):`, currentPhotoUrl);
+              }}
             />
+            
+            {/* Quality indicator */}
+            {currentQuality !== MediaQuality.FULL && (
+              <div className="absolute top-4 left-4 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                {currentQuality === MediaQuality.MEDIUM ? 'Medium' : 'Preview'} Quality
+              </div>
+            )}
+            
+            {/* Preloading indicator */}
+            {preloadingNext && (
+              <div className="absolute top-4 right-16 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                Preloading...
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-white text-lg">Erreur de chargement</div>
@@ -153,6 +244,22 @@ export default function PhotoViewer({
         >
           <RotateCw size={20} />
         </button>
+        <div className="w-px h-6 bg-white/30 mx-2"></div>
+        <button
+          onClick={handleDownload}
+          className="text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+          title="Download"
+        >
+          <Download size={20} />
+        </button>
+        <div className="w-px h-6 bg-white/30 mx-2"></div>
+        <button
+          onClick={() => setShowInfo(!showInfo)}
+          className="text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+          title="Info"
+        >
+          <Info size={20} />
+        </button>
       </div>
 
       {/* Photo info */}
@@ -166,6 +273,37 @@ export default function PhotoViewer({
           </div>
         )}
       </div>
+
+      {/* Detailed info panel */}
+      {showInfo && (
+        <div className="absolute top-16 left-4 bg-black/80 backdrop-blur-sm rounded-lg p-4 text-white max-w-sm">
+          <h3 className="font-semibold mb-2">Photo Details</h3>
+          <div className="space-y-1 text-sm">
+            {currentPhoto.title && (
+              <div><span className="text-gray-300">Title:</span> {currentPhoto.title}</div>
+            )}
+            {currentPhoto.description && (
+              <div><span className="text-gray-300">Description:</span> {currentPhoto.description}</div>
+            )}
+            {currentPhoto.category && (
+              <div><span className="text-gray-300">Category:</span> {currentPhoto.category}</div>
+            )}
+            {currentPhoto.file_size && (
+              <div><span className="text-gray-300">Size:</span> {(currentPhoto.file_size / 1024 / 1024).toFixed(1)} MB</div>
+            )}
+            {currentPhoto.dimensions && (
+              <div><span className="text-gray-300">Dimensions:</span> {currentPhoto.dimensions.width} × {currentPhoto.dimensions.height}</div>
+            )}
+            {currentPhoto.mime_type && (
+              <div><span className="text-gray-300">Type:</span> {currentPhoto.mime_type}</div>
+            )}
+            <div><span className="text-gray-300">Created:</span> {new Date(currentPhoto.created_at).toLocaleDateString()}</div>
+            {currentPhoto.last_accessed && (
+              <div><span className="text-gray-300">Last viewed:</span> {new Date(currentPhoto.last_accessed).toLocaleDateString()}</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

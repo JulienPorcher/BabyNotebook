@@ -6,7 +6,7 @@ import HomePage from "./features/pages/HomePage";
 import OverviewPage from "./features/pages/OverviewPage";
 import GalleryPage from "./features/pages/GalleryPage";
 import SettingsPage from "./features/settings/SettingsPage";
-import EvolutionPage from "./features/pages/subpages/EvolutionPage";
+import ProLinkPage from "./features/pages/subpages/ProLinkPage";
 import SharePage from "./features/pages/SharePage";
 import Layout from "./components/Layout";
 import ForgotPassword from "./features/auth/ForgotPassword";
@@ -41,7 +41,7 @@ function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/overview" element={<OverviewPage />} />
-              <Route path="/evolution" element={<EvolutionPage />} />
+              <Route path="/prolink" element={<ProLinkPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/share" element={<SharePage />} />

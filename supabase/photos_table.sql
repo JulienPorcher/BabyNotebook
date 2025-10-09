@@ -1,12 +1,22 @@
--- Create photos table for storing photo metadata
+-- Create photos table for storing photo metadata with media delivery system support
 CREATE TABLE IF NOT EXISTS photos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   path TEXT NOT NULL,
+  thumbnail_path TEXT,
+  preview_path TEXT,
+  medium_path TEXT,
   baby_id UUID NOT NULL REFERENCES babies(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   description TEXT,
   category TEXT DEFAULT 'general',
   title TEXT,
+  file_size BIGINT,
+  dimensions JSONB, -- {width: number, height: number}
+  mime_type TEXT,
+  checksum TEXT,
+  encrypted BOOLEAN DEFAULT false,
+  encryption_key_id TEXT,
+  last_accessed TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

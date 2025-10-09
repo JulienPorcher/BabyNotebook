@@ -139,7 +139,7 @@ export default function ScrollableStatsPanel({ tab }: ScrollableStatsPanelProps)
             logs = babyData.measures || [];
             break;
           case 'activity':
-            logs = babyData.activities || [];
+            logs = babyData.observations || [];
             break;
         }
 
