@@ -36,7 +36,9 @@ export default function HomePage() {
       weight: 'weights',
       measure: 'measures',
       breast: 'breast_feeding',
-      baby: 'babies'
+      baby: 'babies',
+      souvenir: 'photos',
+      etapes: 'photos'
     };
     return tableMap[page];
   };
@@ -83,7 +85,9 @@ export default function HomePage() {
           weight: 'weights',
           measure: 'measures',
           breast: 'breast',
-          baby: 'meals' // This won't be used since we handle baby separately
+          baby: 'meals', // This won't be used since we handle baby separately
+          souvenir: 'photos',
+          etapes: 'photos'
         };
 
         const dataType = dataTypeMap[currentFormPage];

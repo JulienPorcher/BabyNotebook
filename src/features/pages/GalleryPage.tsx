@@ -1,28 +1,70 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { PlusCircle, Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Heart, Star } from "lucide-react";
 import { useBaby } from "../../context/BabyContext";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
 import PhotoItem from "./gallery/PhotoItem";
 import PhotoViewer from "./gallery/PhotoViewer";
 import UploadModal from "./gallery/UploadModal";
+import SouvenirModal from "./gallery/SouvenirModal";
+import EtapesPage from "./gallery/EtapesPage";
+import GalleryFilters, { type SortOption, type FilterOption } from "./gallery/GalleryFilters";
 import type { Photo } from "../../context/BabyTypes";
+import SquareButton from "../../components/ui/SquareButton";
 
 export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [showSouvenir, setShowSouvenir] = useState(false);
+  const [showEtapes, setShowEtapes] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [uploading, setUploading] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const { currentBabyId, babyData, addData, deleteData, refreshBabyData } = useBaby();
   const { user } = useAuth();
 
   // Get photos from context
   const photos = babyData?.photos || [];
+
+  // Filter and sort photos
+  const filteredAndSortedPhotos = useMemo(() => {
+    let filtered = photos;
+
+    // Apply filter
+    if (filterBy !== 'all') {
+      filtered = photos.filter(photo => photo.category === filterBy);
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'date-asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'date-desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'title-asc':
+          const titleA = (a.title || a.description || '').toLowerCase();
+          const titleB = (b.title || b.description || '').toLowerCase();
+          return titleA.localeCompare(titleB);
+        case 'title-desc':
+          const titleA2 = (a.title || a.description || '').toLowerCase();
+          const titleB2 = (b.title || b.description || '').toLowerCase();
+          return titleB2.localeCompare(titleA2);
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [photos, filterBy, sortBy]);
 
   // Load photos from context
   useEffect(() => {
@@ -89,13 +131,21 @@ export default function GalleryPage() {
     }
   };
 
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+  const handleFileSelect = (file: File | null) => {
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      setSelectedFile(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl("");
+    }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (category: string = 'general') => {
     if (!currentBabyId || !selectedFile || !user) return;
 
     try {
@@ -126,7 +176,9 @@ export default function GalleryPage() {
         user_id: user.id,
         created_at: new Date().toISOString(),
         path: filePath,
-        description: description
+        description: description,
+        category: category,
+        title: title || undefined
       } as any);
 
       console.log("Photo saved to database successfully");
@@ -135,13 +187,25 @@ export default function GalleryPage() {
       setSelectedFile(null);
       setPreviewUrl("");
       setDescription("");
+      setTitle("");
+      setDate(new Date().toISOString().split('T')[0]);
       setShowUpload(false);
+      setShowSouvenir(false);
+      setShowEtapes(false);
     } catch (error) {
       console.error("Error:", error);
       alert("Erreur: " + error);
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleSouvenirUpload = () => {
+    handleUpload('memorie');
+  };
+
+  const handleEtapesUpload = () => {
+    handleUpload('first step');
   };
 
   const handleCancel = () => {
@@ -151,7 +215,11 @@ export default function GalleryPage() {
     setSelectedFile(null);
     setPreviewUrl("");
     setDescription("");
+    setTitle("");
+    setDate(new Date().toISOString().split('T')[0]);
     setShowUpload(false);
+    setShowSouvenir(false);
+    setShowEtapes(false);
   };
 
   const handlePhotoDelete = async (photoId: string) => {
@@ -165,7 +233,7 @@ export default function GalleryPage() {
   };
 
   const handlePhotoOpen = (photo: Photo) => {
-    const index = photos.findIndex(p => p.id === photo.id);
+    const index = filteredAndSortedPhotos.findIndex(p => p.id === photo.id);
     setCurrentPhotoIndex(index);
     setViewerOpen(true);
   };
@@ -186,19 +254,54 @@ export default function GalleryPage() {
     );
   }
 
+  // Show Etapes page if selected
+  if (showEtapes) {
+    return (
+      <EtapesPage
+        onBack={() => setShowEtapes(false)}
+        onFileSelect={handleFileSelect}
+        previewUrl={previewUrl}
+        title={title}
+        onTitleChange={setTitle}
+        date={date}
+        onDateChange={setDate}
+        description={description}
+        onDescriptionChange={setDescription}
+        onUpload={handleEtapesUpload}
+        uploading={uploading}
+      />
+    );
+  }
+
   return (
     <div className="p-4 space-y-6">
-      {/* Header with Upload Button */}
+      {/* Header with Action Buttons */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Galerie Photos</h2>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl"
-        >
-          <PlusCircle size={18} />
-          Ajouter
-        </button>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
+          <SquareButton
+            icon={<Heart size={18} />}
+            label="Souvenir"
+            onClick={() => setShowSouvenir(true)}
+            variant="default"
+            layout="vertical"
+          />
+          <SquareButton
+            icon={<Star size={18} />}
+            label="Étapes"
+            onClick={() => setShowEtapes(true)}
+            variant="default"
+            layout="vertical"
+          />
+        </div>
       </div>
+
+      {/* Filters and Sort */}
+      <GalleryFilters
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        filterBy={filterBy}
+        onFilterChange={setFilterBy}
+      />
 
       {/* Upload Modal */}
       <UploadModal
@@ -208,22 +311,40 @@ export default function GalleryPage() {
         previewUrl={previewUrl}
         description={description}
         onDescriptionChange={setDescription}
-        onUpload={handleUpload}
+        onUpload={() => handleUpload('general')}
+        uploading={uploading}
+      />
+
+      {/* Souvenir Modal */}
+      <SouvenirModal
+        isOpen={showSouvenir}
+        onClose={handleCancel}
+        onFileSelect={handleFileSelect}
+        previewUrl={previewUrl}
+        title={title}
+        onTitleChange={setTitle}
+        date={date}
+        onDateChange={setDate}
+        description={description}
+        onDescriptionChange={setDescription}
+        onUpload={handleSouvenirUpload}
         uploading={uploading}
       />
 
       {/* Photos Grid */}
-      {photos.length === 0 ? (
+      {filteredAndSortedPhotos.length === 0 ? (
         <div className="text-center py-12">
           <ImageIcon size={64} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 text-lg">Aucune photo pour le moment</p>
+          <p className="text-gray-500 text-lg">
+            {filterBy === 'all' ? 'Aucune photo pour le moment' : `Aucune photo dans la catégorie "${filterBy}"`}
+          </p>
           <p className="text-gray-400 text-sm mt-2">
-            Ajoutez des photos pour créer votre galerie
+            {filterBy === 'all' ? 'Ajoutez des photos pour créer votre galerie' : 'Essayez une autre catégorie ou ajoutez des photos'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {photos.map((photo) => (
+          {filteredAndSortedPhotos.map((photo) => (
             <div key={photo.id} className="aspect-square">
               <PhotoItem photo={photo} onDelete={handlePhotoDelete} onOpen={handlePhotoOpen} />
             </div>
@@ -234,7 +355,7 @@ export default function GalleryPage() {
       {/* Photo Viewer Modal */}
       {viewerOpen && (
         <PhotoViewer
-          photos={photos}
+          photos={filteredAndSortedPhotos}
           currentIndex={currentPhotoIndex}
           onClose={handleViewerClose}
           onNavigate={handleViewerNavigate}

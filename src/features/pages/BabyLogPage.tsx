@@ -4,7 +4,8 @@ import { type BabyData } from "../../context/BabyTypes";
 import { useAuth } from "../../hooks/useAuth";
 import UnifiedForm from "../forms/UnifiedForm";
 import ScrollableStatsPanel from "../components/ScrollableStatsPanel";
-import { getActivityConfig, type ActivityType } from "../../lib/activityConfig";
+import { type ActivityType } from "../../lib/activityConfig";
+import SquareButton from "../../components/ui/SquareButton";
 
 
 type BabyLogPageProps = {
@@ -33,7 +34,9 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
       bath: 'baths',
       weight: 'weights',
       measure: 'measures',
-      activity: 'activities'
+      activity: 'activities',
+      souvenir: 'photos',
+      etapes: 'photos'
     };
     return dataTypeMap[activityType];
   };
@@ -63,18 +66,22 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
             <SquareButton
               activityType="bottle"
               onClick={() => { setSelectedFormPage("bottle"); setShowForm(true); }}
+              className="w-full"
             />
             <SquareButton
               activityType="meal"
               onClick={() => { setSelectedFormPage("meal"); setShowForm(true); }}
+              className="w-full"
             />
             <SquareButton
               activityType="breast"
               onClick={() => { setSelectedFormPage("breast"); setShowForm(true); }}
+              className="w-full"
             />
             <SquareButton
               activityType="pump"
               onClick={() => { setSelectedFormPage("pump"); setShowForm(true); }}
+              className="w-full"
             />
           </div>
         ) : page === "hygiene" ? (
@@ -82,10 +89,12 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
             <SquareButton
               activityType="diaper"
               onClick={() => { setSelectedFormPage("diaper"); setShowForm(true); }}
+              className="w-full"
             />
             <SquareButton
               activityType="bath"
               onClick={() => { setSelectedFormPage("bath"); setShowForm(true); }}
+              className="w-full"
             />
           </div>
         ) : page === "health" ? (
@@ -93,10 +102,12 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
             <SquareButton
               activityType="weight"
               onClick={() => { setSelectedFormPage("weight"); setShowForm(true); }}
+              className="w-full"
             />
             <SquareButton
               activityType="measure"
               onClick={() => { setSelectedFormPage("measure"); setShowForm(true); }}
+              className="w-full"
             />
           </div>
         ) : page === "calendar" ? (
@@ -104,6 +115,7 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
             <SquareButton
               activityType="activity"
               onClick={() => { setSelectedFormPage("activity"); setShowForm(true); }}
+              className="w-full"
             />
           </div>
         ) : null}
@@ -135,17 +147,3 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   );
 }
 
-function SquareButton({ activityType, onClick }: { activityType: ActivityType; onClick: () => void }) {
-  const config = getActivityConfig(activityType);
-  const IconComponent = config.icon;
-  
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center justify-center w-full bg-gray-100 rounded-xl p-4 hover:bg-gray-200"
-    >
-      <IconComponent className="w-6 h-6" />
-      <span className="text-xs mt-1">{config.title}</span>
-    </button>
-  );
-}
