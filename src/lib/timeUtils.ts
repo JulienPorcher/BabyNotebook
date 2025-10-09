@@ -127,7 +127,7 @@ export function getRelativeTimeString(date: string | Date | null): string {
     return `${duration.minutes} min${duration.minutes > 1 ? 's' : ''}`;
   }
   
-  if (duration.totalMinutes < 1440) { // Less than 24 hours
+  if (duration.totalMinutes < 1440) { // Less than 1 day (24 hours)
     return `${duration.formatted}`;
   }
   

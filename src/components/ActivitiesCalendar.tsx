@@ -24,6 +24,7 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [highlightedTypes, setHighlightedTypes] = useState<Set<ActivityType>>(new Set());
 
   // Get the first day of the current month and calculate the calendar grid
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -126,6 +127,28 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
       
       return false;
     });
+  };
+
+  const toggleHighlight = (type: ActivityType) => {
+    const newHighlighted = new Set(highlightedTypes);
+    if (newHighlighted.has(type)) {
+      newHighlighted.delete(type);
+    } else {
+      newHighlighted.add(type);
+    }
+    setHighlightedTypes(newHighlighted);
+  };
+
+  const getFilteredEventsForDay = (date: Date) => {
+    const dayEvents = getEventsForDay(date);
+    
+    // If no types are highlighted, show all events
+    if (highlightedTypes.size === 0) {
+      return dayEvents;
+    }
+    
+    // Otherwise, only show highlighted types
+    return dayEvents.filter(event => highlightedTypes.has(event.type));
   };
 
   const handleDayClick = (date: Date) => {
@@ -247,7 +270,7 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((date, index) => {
-          const dayEvents = getEventsForDay(date);
+          const filteredEvents = getFilteredEventsForDay(date);
           const eventsByType = getEventsByTypeForDay(date);
           const isCurrentMonthDay = isCurrentMonth(date);
           const isTodayDay = isToday(date);
@@ -259,7 +282,7 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
                 h-16 p-1 border rounded-lg transition-colors relative cursor-pointer
                 ${isCurrentMonthDay ? 'bg-white' : 'bg-gray-50'}
                 ${isTodayDay ? 'ring-2 ring-blue-500' : ''}
-                ${dayEvents.length > 0 ? 'border-blue-200 hover:border-blue-300' : 'border-gray-200 hover:border-gray-300'}
+                ${filteredEvents.length > 0 ? 'border-blue-200 hover:border-blue-300' : 'border-gray-200 hover:border-gray-300'}
               `}
               onClick={() => handleDayClick(date)}
             >
@@ -275,6 +298,11 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
               <div className="space-y-0.5">
                 {Object.entries(eventsByType).map(([type, count]) => {
                   if (count === 0) return null;
+                  
+                  // If highlighting is active, only show highlighted types
+                  if (highlightedTypes.size > 0 && !highlightedTypes.has(type as ActivityType)) {
+                    return null;
+                  }
                   
                   const config = activityConfig[type as ActivityType];
                   
@@ -295,8 +323,6 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
                   const bgColor = config.color.split(' ')[0]; // Get first part (bg-blue-50)
                   const darkerColor = bgColor.replace('-50', '-500'); // Convert to bg-blue-500
                   const hexColor = colorMap[darkerColor] || '#6b7280'; // Default gray if not found
-                  
-                  console.log(`Rendering line for ${type}: count=${count}, color=${darkerColor}, hex=${hexColor}`);
                   
                   return (
                     <div
@@ -319,15 +345,29 @@ export default function ActivitiesCalendar({ babyId }: ActivitiesCalendarProps) 
         <div className="grid grid-cols-3 gap-2">
           {Object.entries(activityConfig).map(([type, config]) => {
             const IconComponent = config.icon;
+            const isHighlighted = highlightedTypes.has(type as ActivityType);
+            const hasHighlighting = highlightedTypes.size > 0;
+            
             return (
-              <div key={type} className="flex items-center gap-2">
+              <div 
+                key={type} 
+                className={`
+                  flex items-center gap-2 cursor-pointer p-2 rounded-lg transition-colors
+                  ${isHighlighted ? 'bg-blue-100 border border-blue-300' : ''}
+                  ${hasHighlighting && !isHighlighted ? 'opacity-30' : ''}
+                  hover:bg-gray-100
+                `}
+                onClick={() => toggleHighlight(type as ActivityType)}
+              >
                 <div className={`
                   w-4 h-4 rounded flex items-center justify-center
                   ${config.color}
                 `}>
                   <IconComponent size={10} className={config.textColor} />
                 </div>
-                <span className="text-xs text-gray-600">{config.title}</span>
+                <span className={`text-xs ${isHighlighted ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
+                  {config.title}
+                </span>
               </div>
             );
           })}

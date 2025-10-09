@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UnifiedForm, { type FormPage } from "../forms/UnifiedForm";
 import { useBaby } from "../../context/BabyContext";
+import { type BabyData } from "../../context/BabyTypes";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabaseClient";
 import BabySelector from "../components/BabySelector";
@@ -15,7 +16,7 @@ import { usePullToRefresh } from "../../hooks/usePullToRefresh";
 
 
 export default function HomePage() {
-  const { currentBabyId, babies, loading, setCurrentBabyId, refreshBabies, clearCache } = useBaby();
+  const { currentBabyId, babies, loading, setCurrentBabyId, refreshBabies, clearCache, addData, refreshBabyData } = useBaby();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
@@ -44,35 +45,52 @@ export default function HomePage() {
     if (!currentFormPage || !user?.id) return;
 
     try {
-      const tableName = getTableNameForForm(currentFormPage);
-      
       // Convert datetime fields to proper format for Supabase
       const processedFormData = { ...formData };
       if (processedFormData.date_time) {
         processedFormData.date_time = convertToSupabaseDateTime(processedFormData.date_time);
       }
 
-      // For baby creation, add user_id and don't add baby_id (it's the baby being created)
-      const insertData = currentFormPage === 'baby' 
-        ? { ...processedFormData, owner_id: user.id }
-        : { ...processedFormData, baby_id: currentBabyId, user_id: user.id };
+      // For baby creation, use the old method since it's not part of baby data
+      if (currentFormPage === 'baby') {
+        const tableName = getTableNameForForm(currentFormPage);
+        const insertData = { ...processedFormData, owner_id: user.id };
 
-      console.log("Submitting to table:", tableName);
-      console.log("Data being inserted:", insertData);
+        console.log("Submitting to table:", tableName);
+        console.log("Data being inserted:", insertData);
 
-      const { error } = await supabase
-        .from(tableName)
-        .insert([insertData]);
+        const { error } = await supabase
+          .from(tableName)
+          .insert([insertData]);
 
-      if (error) {
-        console.error("Error adding entry:", error);
-        alert(`Erreur lors de l'ajout: ${error.message}`);
-      } else {
-        console.log("Entry added successfully");
-        // If it's a baby creation, force refresh the baby list
-        if (currentFormPage === 'baby') {
+        if (error) {
+          console.error("Error adding entry:", error);
+          alert(`Erreur lors de l'ajout: ${error.message}`);
+        } else {
+          console.log("Entry added successfully");
           console.log("Baby created successfully!");
           await refreshBabies(true);
+        }
+      } else {
+        // For other data types, use the context's addData function
+        const dataTypeMap: Record<FormPage, keyof BabyData> = {
+          meal: 'meals',
+          bottle: 'bottles',
+          pump: 'pumps',
+          diaper: 'diapers',
+          activity: 'activities',
+          bath: 'baths',
+          weight: 'weights',
+          measure: 'measures',
+          breast: 'breast',
+          baby: 'meals' // This won't be used since we handle baby separately
+        };
+
+        const dataType = dataTypeMap[currentFormPage];
+        if (dataType) {
+          console.log("Adding data via context:", dataType, processedFormData);
+          await addData(dataType, processedFormData as any);
+          console.log("Data added successfully via context");
         }
       }
     } catch (error) {
@@ -106,6 +124,10 @@ export default function HomePage() {
     // Clear cache and force refresh
     clearCache();
     await refreshBabies(true);
+    // Also refresh baby data if we have a current baby
+    if (currentBabyId) {
+      await refreshBabyData(currentBabyId);
+    }
     setIsRefreshing(false);
   };
 

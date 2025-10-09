@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
 import { useBaby } from "../../context/BabyContext";
+import { type BabyData } from "../../context/BabyTypes";
 import { useAuth } from "../../hooks/useAuth";
 import UnifiedForm from "../forms/UnifiedForm";
 import ScrollableStatsPanel from "../components/ScrollableStatsPanel";
-import { getTableName, getActivityConfig, type ActivityType } from "../../lib/activityConfig";
+import { getActivityConfig, type ActivityType } from "../../lib/activityConfig";
 
 
 type BabyLogPageProps = {
-  page: 'meal' | 'hygiene' | 'health';
+  page: 'meal' | 'hygiene' | 'health' | 'calendar';
 };
 
 
 
 export default function BabyLogPage({ page }: BabyLogPageProps) {
-  const { currentBabyId } = useBaby();
+  const { currentBabyId, addData } = useBaby();
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [selectedFormPage, setSelectedFormPage] = useState<ActivityType | null>(null);
@@ -22,23 +22,33 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
   // Page effective (si un sous-formulaire est sélectionné)
   const effectivePage: ActivityType | null = selectedFormPage;
 
-  // Table cible - seulement si on a un formulaire sélectionné
-  const table = effectivePage ? getTableName(effectivePage) : null;
+  // Map activity types to context data types
+  const getDataTypeFromActivity = (activityType: ActivityType): keyof BabyData => {
+    const dataTypeMap: Record<ActivityType, keyof BabyData> = {
+      bottle: 'bottles',
+      meal: 'meals',
+      breast: 'breast',
+      pump: 'pumps',
+      diaper: 'diapers',
+      bath: 'baths',
+      weight: 'weights',
+      measure: 'measures',
+      activity: 'activities'
+    };
+    return dataTypeMap[activityType];
+  };
 
   async function handleFormSubmit(formData: Record<string, any>) {
-    if (!currentBabyId || !user?.id || !table) return;
+    if (!currentBabyId || !user?.id || !effectivePage) return;
 
     try {
-      const { error } = await supabase
-        .from(table)
-        .insert([{ ...formData, baby_id: currentBabyId, user_id: user.id }]);
-
-      if (error) {
-        console.error("Error adding log:", error);
-      } else {
-        // Trigger refresh of ScrollableStatsPanel
-        window.dispatchEvent(new CustomEvent('refreshStatsPanel'));
-      }
+      const dataType = getDataTypeFromActivity(effectivePage);
+      console.log("Adding data via context:", dataType, formData);
+      await addData(dataType, formData as any);
+      console.log("Data added successfully via context");
+      
+      // Trigger refresh of ScrollableStatsPanel
+      window.dispatchEvent(new CustomEvent('refreshStatsPanel'));
     } catch (error) {
       console.error("Error:", error);
     }
@@ -89,11 +99,18 @@ export default function BabyLogPage({ page }: BabyLogPageProps) {
               onClick={() => { setSelectedFormPage("measure"); setShowForm(true); }}
             />
           </div>
+        ) : page === "calendar" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full pb-2">
+            <SquareButton
+              activityType="activity"
+              onClick={() => { setSelectedFormPage("activity"); setShowForm(true); }}
+            />
+          </div>
         ) : null}
       </div>
 
       {/* Stats et Tableau des logs - ScrollableStatsPanel */}
-      <ScrollableStatsPanel tab={page} />
+      {page !== "calendar" && <ScrollableStatsPanel tab={page} />}
 
       {/* Boutons supplémentaires */}
       <div className="flex gap-2 mt-4">

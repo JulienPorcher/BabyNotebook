@@ -1,8 +1,11 @@
 import { useState } from "react";
 import BabyLogPage from "./BabyLogPage";
+import ActivitiesCalendar from "../../components/ActivitiesCalendar";
+import { useBaby } from "../../context/BabyContext";
 
 export default function OverviewPage() {
-  const [activeTab, setActiveTab] = useState<"meals" | "hygiene" | "health">("meals");
+  const [activeTab, setActiveTab] = useState<"meals" | "hygiene" | "health" | "calendar">("meals");
+  const { currentBabyId } = useBaby();
 
 
   return (
@@ -34,6 +37,14 @@ export default function OverviewPage() {
         >
           Santé
         </button>
+        <button
+          className={`flex-1 px-4 py-2 rounded-t-lg ${
+            activeTab === "calendar" ? "bg-pink-500 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setActiveTab("calendar")}
+        >
+          Calendrier
+        </button>
       </div>
 
       {/* Contenu du sous-onglet */}
@@ -41,6 +52,9 @@ export default function OverviewPage() {
         {activeTab === "meals" && <BabyLogPage page="meal"/>}
         {activeTab === "hygiene" && <BabyLogPage page="hygiene" />}
         {activeTab === "health" && <BabyLogPage page="health" />}
+        {activeTab === "calendar" && currentBabyId && (
+          <ActivitiesCalendar babyId={currentBabyId} />
+        )}
       </div>
       {/* Bouton partenaire */}
         <div className="mt-4 bg-yellow-100 p-3 rounded-xl">

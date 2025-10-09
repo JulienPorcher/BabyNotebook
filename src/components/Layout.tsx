@@ -1,12 +1,12 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Home, Utensils, Activity, Settings, Baby } from "lucide-react";
+import { Home, Utensils, Image, Settings, Baby } from "lucide-react";
 import { useBaby } from "../context/BabyContext";
 
 const tabs = [
   { path: "/", icon: <Home size={24} /> },
   { path: "/overview", icon: <Utensils size={24} /> },
   { path: "/evolution", icon: <Baby size={24} /> },
-  { path: "/activities", icon: <Activity size={24} /> },
+  { path: "/gallery", icon: <Image size={24} /> },
   { path: "/settings", icon: <Settings size={24} /> },
 ];
 

@@ -1,17 +1,8 @@
 import { Baby } from "lucide-react";
-
-interface BabyData {
-    id: string;
-    name: string;
-    birth_date: string;
-    gender: string;
-    user_id: string;
-    role: string;
-    nickname: string;
-  }
+import { type Baby as BabyType } from "../../context/BabyTypes";
 
 interface BabySelectorProps {
-  babies: BabyData[];
+  babies: BabyType[];
   currentBabyId: string | null;
   onSelectBaby: (babyId: string) => void;
   loading?: boolean;
